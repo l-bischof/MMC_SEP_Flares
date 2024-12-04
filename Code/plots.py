@@ -55,7 +55,7 @@ def plot(flare_id, utc, flare_loc, plot_p, p = [-1, 0]):
     
     return
 
-def plot_epd_data(df, df_mean, df_std, sigma_factor, filename = "Images/epd_data.jpg", connected_flares_peak_utc = [], epd_connected_flares_peak_utc = [], events_epd_utc = []):
+def plot_epd_data(df, df_mean, df_std, sigma_factor, filename = "Images/epd_data.jpg", connected_flares_peak_utc = [], epd_connected_flares_peak_utc = [], events_epd_utc = [], all_flare_utc = []):
     '''
     plots epd data from pandas dataframe
     '''
@@ -69,76 +69,101 @@ def plot_epd_data(df, df_mean, df_std, sigma_factor, filename = "Images/epd_data
     first_con_tool = True
     first_con = True
     first_EPD = True
+    first_flare = True
+    
+    #'''
+    # used to plot only fraction of data
+    df = df['2022-01-14 12:00:00':'2022-01-15 00:00:00']
+    df_mean = df_mean['2022-01-14 12:00:00':'2022-01-15 00:00:00']
+    df_std = df_std['2022-01-14 12:00:00':'2022-01-15 00:00:00']
+    #'''
     
     plt.clf()
     
-    plt.rcParams["figure.figsize"] = (20, 9)
+    plt.rcParams["figure.figsize"] = (10, 9)
     
-    fig = plt.figure()
+    fig, axs = plt.subplots(4, sharex = False)
+    plt.subplots_adjust(hspace = 0)
     
-    axs = fig.add_gridspec(3, hspace = 0).subplots(sharex = True)
+    df_temp = df[['Electron_Flux_1', 'Electron_Flux_1', 'Electron_Flux_10', 'Electron_Flux_32']]
+    df_temp.columns = ['_Flare', 'EPT Channel 1', 'EPT Channel 10', 'EPT Channel 32']
+    df_temp.loc[:, '_Flare'] = np.nan # no data will be plotted but the datetime x-axis remains
     
-    df_temp = df[['Electron_Flux_1', 'Electron_Flux_10', 'Electron_Flux_32']]
-    df_temp.columns = ['EPT Channel 1', 'EPT Channel 10', 'EPT Channel 32']
+    cols = ['1', '10', '32']
 
-    df_temp[['EPT Channel 1']].plot(logy = True, color = '#000000', ax = axs[0])
-    df_temp[['EPT Channel 10']].plot(logy = True, color = '#000000', ax = axs[1])
-    df_temp[['EPT Channel 32']].plot(logy = True, color = '#000000', ax = axs[2])
+    df_temp[['_Flare']].plot(color = '#000000', ax = axs[0])
+    
+    for i in range(3):   
+        df_temp[['EPT Channel ' + cols[i]]].plot(logy = True, color = '#000000', ax = axs[i + 1])
 
     # compute mean + x * Sigma and plot it.
     df_std *= sigma_factor
-    df_std.loc[:, df_std[['Mean+' + str(sigma_factor) + 'Sigma_Flux_1']].columns[0]] += df_mean[['Mean_Flux_1']][df_mean[['Mean_Flux_1']].columns[0]]
-    df_std.loc[:, df_std[['Mean+' + str(sigma_factor) + 'Sigma_Flux_10']].columns[0]] += df_mean[['Mean_Flux_10']][df_mean[['Mean_Flux_10']].columns[0]]
-    df_std.loc[:, df_std[['Mean+' + str(sigma_factor) + 'Sigma_Flux_32']].columns[0]] += df_mean[['Mean_Flux_32']][df_mean[['Mean_Flux_32']].columns[0]]
+    for i in cols:
+        df_std.loc[:, df_std[['Mean+' + str(sigma_factor) + 'Sigma_Flux_' + i]].columns[0]] += df_mean[['Mean_Flux_' + i]][df_mean[['Mean_Flux_' + i]].columns[0]]
     
     df_temp = df_std[['Mean+' + str(sigma_factor) + 'Sigma_Flux_1', 'Mean+' + str(sigma_factor) + 'Sigma_Flux_10', 'Mean+' + str(sigma_factor) + 'Sigma_Flux_32']]
     df_temp.columns = ['Mean + ' + str(sigma_factor) + r"$\sigma$" + ' (Channel 1)' + str(energies[1]),
                        'Mean + ' + str(sigma_factor) + r"$\sigma$" + ' (Channel 10)' + str(energies[10]),
                        'Mean + ' + str(sigma_factor) + r"$\sigma$" + ' (Channel 32)' + str(energies[32])]
     
-    df_temp[[df_temp.columns[0]]].plot(color = 'g', ax = axs[0])
-    df_temp[[df_temp.columns[1]]].plot(color = 'g', ax = axs[1])
-    df_temp[[df_temp.columns[2]]].plot(color = 'g', ax = axs[2])
+    for i in range(3):
+        df_temp[[df_temp.columns[i]]].plot(color = 'g', ax = axs[i + 1])
+    
+    plt.setp(axs[0], yticks=[])
+    
+    for i in all_flare_utc:
+        if first_flare:
+            axs[0].axvline(i, color = '#000000', label = 'flare (STIX)')
+            first_flare = False
+        else:
+            axs[0].axvline(i, color = '#000000')
     
     # plot mag con tool connected flares
     for flare_utc in connected_flares_peak_utc:
-        for j in range(3):
-            if first_con_tool and j == 2:
-                axs[j].axvline(flare_utc, color = 'orange', label = 'candidate (connectivity tool)')
-                first_con_tool = False
-            else:
-                axs[j].axvline(flare_utc, color = 'orange')
-        # plt.axvline(delayed_utc, color = 'g')
-        # plt.axvspan(delayed_utc, delayed_utc_indirect, color='g', alpha = 0.15)
+        if first_con_tool:
+            axs[0].axvline(flare_utc, color = 'orange', label = 'candidate (MCT)')
+            first_con_tool = False
+        else:
+            axs[0].axvline(flare_utc, color = 'orange')
     
     # plot epd connected flares
     for flare_utc in epd_connected_flares_peak_utc:
         for j in range(3):
             if first_EPD_can and j == 2:
-                axs[j].axvline(flare_utc, color = 'b', label = 'temporal coincidence with electron event')
+                axs[j + 1].axvline(flare_utc, color = 'b', label = 'temporal coincidence with electron event')
                 first_EPD_can = False
             else:
-                axs[j].axvline(flare_utc, color = 'b')
+                axs[j + 1].axvline(flare_utc, color = 'b')
         
     for i in misc_handler.intersection(epd_connected_flares_peak_utc, connected_flares_peak_utc):
         for j in range(3):
             if first_con and j == 2:
-                axs[j].axvline(i, color = 'r', label = 'connected flare-electron event')
+                axs[j + 1].axvline(i, color = 'r', label = 'connected flare-electron event')
                 first_con = False
             else:
-                axs[j].axvline(i, color = 'r')
-    
+                axs[j + 1].axvline(i, color = 'r')
+               
     # plotting the timespans where we detect an event in the epd data
     for i in events_epd_utc:
         for j in range(3):
             if first_EPD and j == 2:
-                axs[j].axvspan(i[0], i[1], color = 'b', alpha = 0.2, label = 'electron event')
+                axs[j + 1].axvspan(i[0], i[1], color = 'b', alpha = 0.2, label = 'electron event')
                 first_EPD = False
             else:
-                axs[j].axvspan(i[0], i[1], color = 'b', alpha = 0.2)
+                axs[j + 1].axvspan(i[0], i[1], color = 'b', alpha = 0.2)
      
-    # plot legend of graphs  
-    plt.legend()
+    # plot legend of graphs
+    for i in range(4):
+        axs[i].legend()
+        if i != 0:
+            axs[i].secondary_yaxis('right')
+            axs[i].set_ylim(axs[i].get_ylim()[0], None)
+            
+    axs[0].xaxis.tick_top()
+    axs[1].get_xaxis().set_visible(False)
+    axs[2].get_xaxis().set_visible(False)
+    
+    axs[3].legend(loc = 'lower right')
     
     # save graphs as one plot to add axis labels
     fig.add_subplot(111, frameon = False)
@@ -153,9 +178,12 @@ def plot_epd_data(df, df_mean, df_std, sigma_factor, filename = "Images/epd_data
     
     return
 
-def plot_step_data(df, df_mean, df_std, sigma_factor, offset, filename = "Images/epd_data.jpg", connected_flares_peak_utc = [], epd_connected_flares_peak_utc = [], events_epd_utc = []):
+def plot_step_data(df, df_mean, df_std, sigma_factor, offset, filename = "Images/epd_data.jpg", connected_flares_peak_utc = [], epd_connected_flares_peak_utc = [], events_epd_utc = [], all_flare_utc = []):
     '''
     plots epd data from pandas dataframe
+    
+    As the step data from before October 22, 2021, is of different size as later data, there are a few patchwork solution to work around this but only use one function to handle both cases.
+    Do not attempt to use date from before and after this date in one simulation!!!
     '''
     energies_32 = [['0.0057 - 0.0090 MeV'], ['0.0061 - 0.0091 MeV'], ['0.0065 - 0.0094 MeV'], ['0.0070 - 0.0098 MeV'], ['0.0075 - 0.0102 MeV'], ['0.0088 - 0.0114 MeV'], ['0.0082 - 0.0108 MeV'],
                    ['0.0095 - 0.0121 MeV'], ['0.0103 - 0.0129 MeV'], ['0.0111 - 0.0137 MeV'], ['0.0120 - 0.0146 MeV'], ['0.0130 - 0.0157 MeV'], ['0.0141 - 0.0168 MeV'], ['0.0152 - 0.0180 MeV'],
@@ -174,39 +202,51 @@ def plot_step_data(df, df_mean, df_std, sigma_factor, offset, filename = "Images
     first_con_tool = True
     first_con = True
     first_EPD = True
-    panels = 3
+    first_flare = True
+    panels = 4
     
     step_long = False
     
     if len(df.columns) > 40:
         step_long = True
-        panels = 4
+        panels = 5
+    
+    '''
+    # used to plot only fraction of data
+    df = df['2022-01-29 18:00:00':'2022-01-30 06:00:00']
+    df_mean = df_mean['2021-04-19 18:00:00':'2021-04-20 04:00:00']
+    df_std = df_std['2021-04-19 18:00:00':'2021-04-20 04:00:00']
+    '''
     
     plt.clf()
     
     plt.rcParams["figure.figsize"] = (20, 9)
     
-    fig = plt.figure()
+    fig, axs = plt.subplots(panels, sharex = False)
+    plt.subplots_adjust(hspace = 0)
     
     if (step_long):
-        axs = fig.add_gridspec(4, hspace = 0).subplots(sharex = True)
-        offset = [offset[0], offset[15], offset[31], offset[47]]
+        offset = [0, offset[0], offset[15], offset[31], offset[47]]
     else:
-        axs = fig.add_gridspec(3, hspace = 0).subplots(sharex = True)
-        offset = [offset[0], offset[15], offset[31]]
+        offset = [0, offset[0], offset[15], offset[31]]
         
     if (step_long):
-        df_temp = df[['Electron_Avg_Flux_0', 'Electron_Avg_Flux_15', 'Electron_Avg_Flux_31', 'Electron_Avg_Flux_47']]
-        df_temp.columns = ['STEP Channel 0', 'STEP Channel 15', 'STEP Channel 31', 'STEP Channel 47']
+        df_temp = df[['Electron_Avg_Flux_0', 'Electron_Avg_Flux_0', 'Electron_Avg_Flux_15', 'Electron_Avg_Flux_31', 'Electron_Avg_Flux_47']]
+        df_temp.columns = ['_Flare', 'STEP Channel 0', 'STEP Channel 15', 'STEP Channel 31', 'STEP Channel 47']
     else:
-        df_temp = df[['Electron_Avg_Flux_0', 'Electron_Avg_Flux_15', 'Electron_Avg_Flux_31']]
-        df_temp.columns = ['STEP Channel 0', 'STEP Channel 15', 'STEP Channel 31']
+        df_temp = df[['Electron_Avg_Flux_0', 'Electron_Avg_Flux_0', 'Electron_Avg_Flux_15', 'Electron_Avg_Flux_31']]
+        df_temp.columns = ['_Flare', 'STEP Channel 0', 'STEP Channel 15', 'STEP Channel 31']
+        
+    df_temp.loc[:, '_Flare'] = np.nan # no data will be plotted but the datetime x-axis remains
+    
+    cols = ['0', '15', '31', '47']
 
-    df_temp[['STEP Channel 0']].plot(logy = True, color = '#000000', ax = axs[0])
-    df_temp[['STEP Channel 15']].plot(logy = True, color = '#000000', ax = axs[1])
-    df_temp[['STEP Channel 31']].plot(logy = True, color = '#000000', ax = axs[2])
+    df_temp[['_Flare']].plot(color = '#000000', ax = axs[0])
+    
+    for i in range(panels - 1):
+        df_temp[['STEP Channel ' + cols[i]]].plot(logy = True, color = '#000000', ax = axs[i + 1])
+        
     if (step_long):
-        df_temp[['STEP Channel 47']].plot(logy = True, color = '#000000', ax = axs[3])
         df_temp = df_std[['Mean+' + str(sigma_factor) + 'Sigma_Flux_0', 'Mean+' + str(sigma_factor) + 'Sigma_Flux_15', 'Mean+' + str(sigma_factor) + 'Sigma_Flux_31', 'Mean+' + str(sigma_factor) + 'Sigma_Flux_47']]
         df_temp.columns = ['Mean + ' + str(sigma_factor) + r"$\sigma$" + ' (Channel 0) ' + str(energies_48[0]),
                            'Mean + ' + str(sigma_factor) + r"$\sigma$" + ' (Channel 15) ' + str(energies_48[15]),
@@ -220,43 +260,40 @@ def plot_step_data(df, df_mean, df_std, sigma_factor, offset, filename = "Images
 
     # compute mean + x * Sigma and plot it.
     df_temp *= sigma_factor
-    df_temp.loc[:, df_temp[[df_temp.columns[0]]].columns[0]] += df_mean[['Mean_Flux_0']][df_mean[['Mean_Flux_0']].columns[0]]
-    df_temp.loc[:, df_temp[[df_temp.columns[1]]].columns[0]] += df_mean[['Mean_Flux_15']][df_mean[['Mean_Flux_15']].columns[0]]
-    df_temp.loc[:, df_temp[[df_temp.columns[2]]].columns[0]] += df_mean[['Mean_Flux_31']][df_mean[['Mean_Flux_31']].columns[0]]
     
-    df_temp[[df_temp.columns[0]]].plot(color = 'g', ax = axs[0])
-    df_temp[[df_temp.columns[1]]].plot(color = 'g', ax = axs[1])
-    df_temp[[df_temp.columns[2]]].plot(color = 'g', ax = axs[2])
-    
-    if (step_long):
-        df_temp.loc[:, df_temp[[df_temp.columns[3]]].columns[0]] += df_mean[['Mean_Flux_47']][df_mean[['Mean_Flux_47']].columns[0]]
-        df_temp[[df_temp.columns[3]]].plot(color = 'g', ax = axs[3])
+    for i in range(panels - 1):
+        df_temp.loc[:, df_temp[[df_temp.columns[i]]].columns[0]] += df_mean[['Mean_Flux_' + cols[i]]][df_mean[['Mean_Flux_' + cols[i]]].columns[0]]
+        df_temp[[df_temp.columns[i]]].plot(color = 'g', ax = axs[i + 1])
+        
+    plt.setp(axs[0], yticks=[])
+        
+    for i in all_flare_utc:
+        if first_flare:
+            axs[0].axvline(i, color = '#000000', label = 'flare')
+            first_flare = False
+        else:
+            axs[0].axvline(i, color = '#000000')
     
     # plot mag con tool connected flares
-    i = 0
     for flare_utc in connected_flares_peak_utc:
-        for j in range(panels):
-            if first_con_tool and j == 0:
-                axs[j].axvline(flare_utc, color = 'orange', label = 'candidate (connectivity tool)')
-                first_con_tool = False
-            else:
-                axs[j].axvline(flare_utc, color = 'orange')
-        i += 1
-        # plt.axvline(delayed_utc, color = 'g')
-        # plt.axvspan(delayed_utc, delayed_utc_indirect, color='g', alpha = 0.15)
+        if first_con_tool:
+            axs[0].axvline(flare_utc, color = 'orange', label = 'candidate (connectivity tool)')
+            first_con_tool = False
+        else:
+            axs[0].axvline(flare_utc, color = 'orange')
     
     # plot epd connected flares
     for flare_utc in epd_connected_flares_peak_utc:
-        for j in range(panels):
-            if first_EPD_can and j == 0:
+        for j in range(1, panels):
+            if first_EPD_can and j == 1:
                 axs[j].axvline(flare_utc, color = 'b', label = 'temporal coincidence with electron event')
                 first_EPD_can = False
             else:
                 axs[j].axvline(flare_utc, color = 'b')
         
     for i in misc_handler.intersection(epd_connected_flares_peak_utc, connected_flares_peak_utc):
-        for j in range(panels):
-            if first_con and j == 0:
+        for j in range(1, panels):
+            if first_con and j == 1:
                 axs[j].axvline(i, color = 'r', label = 'connected flare-electron event')
                 first_con = False
             else:
@@ -264,15 +301,22 @@ def plot_step_data(df, df_mean, df_std, sigma_factor, offset, filename = "Images
     
     # plotting the timespans where we detect an event in the epd data
     for i in events_epd_utc:
-        for j in range(panels):
+        for j in range(1, panels):
             if first_EPD and j == 0:
                 axs[j].axvspan(i[0] + datetime.timedelta(0, offset[j] * 300), i[1] + datetime.timedelta(0, offset[j] * 300), color = 'b', alpha = 0.2, label = 'electron event')
                 first_EPD = False
             else:
                 axs[j].axvspan(i[0] + datetime.timedelta(0, offset[j] * 300), i[1] + datetime.timedelta(0, offset[j] * 300), color = 'b', alpha = 0.2)
-     
-    # plot legend of graphs  
-    plt.legend()
+    
+    axs[0].xaxis.tick_top()
+    
+    # plot legend of graphs
+    for i in range(panels):
+        axs[i].legend()
+        if i != 0:
+            axs[i].secondary_yaxis('right')
+        if i != 0 and i != panels - 1:
+            axs[i].get_xaxis().set_visible(False)
     
     # save graphs as one plot to add axis labels
     fig.add_subplot(111, frameon = False)
