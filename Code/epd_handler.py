@@ -198,7 +198,7 @@ def find_event(df, mean, std, sigma_factor):
     '''
     Finds event in pandas dataframe provided and returns the pairs of [start_time, end_time] in an array.
     
-    Event if incoming particle numbers are at sigma_factor times the standard deviation above the running average in 10 of the particle bins.
+    Event if incoming particle numbers are at sigma_factor times the standard deviation above the running average in 5 of the particle bins.
     '''    
     min_bins = 5 # min number of bins required to measure a rise in particles to classify as an event
     
@@ -212,6 +212,7 @@ def find_event(df, mean, std, sigma_factor):
     max_mem = []
     
     for j in range(len(df.index)):
+        # print("Working on:", df.index[j])
         num_bins = 0
         if not ongoing_event: # there is currently no event going on -> check if new event starts
             for i in df.columns[:]:
@@ -324,9 +325,16 @@ def running_average(df):
     df_background = df.copy()
     df_std = df.copy()
     length = 18 # number of bins to average over (x * time resolution)
-    delay = 1   # number of bins to delay the average (x * time resolution). This allows for the detection of more gradual peaks
+    delay = 0   # number of bins to delay the average (x * time resolution). This allows for the detection of more gradual peaks
     
     df_temp = df.iloc[0:length].reset_index(drop = True)
+    
+    '''
+    for i in df_temp.columns:
+        for j in df_temp[i]:
+            if j < 0:
+                df_temp[i][j] = 0
+    '''
     
     count = 0
     # loop over all rows to calculate running average
