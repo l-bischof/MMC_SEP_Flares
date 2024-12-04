@@ -8,7 +8,7 @@ def read_list():
     '''
     Reads csv flare list file and returns the contents as a database.
     '''
-    return pd.read_csv("flare_list/STIX_flarelist_w_locations_20210214_20230430_version3.csv")
+    return pd.read_csv("flare_list/STIX_flarelist_w_locations_20210318_20240801_version1_pythom.csv")
  
 def closest_timestamp(peak_utc):
     '''
