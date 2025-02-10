@@ -11,7 +11,7 @@ df = pd.DataFrame(index = range(len(stix_flares)), columns = ['Parker_Spiral_Dis
 dest = "SolarMACH/parker_spiral_distance.pkl"
 
 dest_temp = "SolarMACH/parker_spiral_distance_temp.pkl"
-start = 0
+start = 0 # change this variable you want to append new data without doing everything again e.g. in case of a crash in the process
 
 if start != 0:
     df = pd.read_pickle(dest_temp)
