@@ -37,9 +37,7 @@ def read_data(utc):
     if not os.path.isfile(filename):
         utc_start = utc[0:4] + '-' + utc[5:7] + '-' + utc[8:10] + '/' + utc[11:13] + '0000'
         download_files(utc_start, misc_handler.next_utc(utc_start)) # as only next file is needed in this case
-    
-    raw_data = open(filename, 'r')
-    
+        
     # generate empty dataframe with columns: [i, density(%), R(m), CRLT(degrees), CRLN(degrees), DIST(m), HPLT(degrees), HPLN(degrees)]
     df = pd.DataFrame({"SSW/FSW/M" : pd.Series(dtype = 'string'),
                        "density" : pd.Series(dtype = 'float'),
@@ -49,6 +47,11 @@ def read_data(utc):
                        "DIST" : pd.Series(dtype = 'float'),
                        "HPLT" : pd.Series(dtype = 'float'),
                        "HPLN" : pd.Series(dtype = 'float')})
+    
+    if not os.path.isfile(filename):
+        return df
+        
+    raw_data = open(filename, 'r')
     
     i = 1
     for line in raw_data:
@@ -69,14 +72,18 @@ def read_data(utc):
 
     return df
 
+'''
+Obsolete function!
+Kept to show the idea of grouping possible connection points
+
 def separation(data, epsilon):
-    '''
+    #''
     Separate possible connection points into groups with at most epsilon degrees of distance between each other
     
     parameters:
     data:       pandas dataframe with information on flares
     epsilon:    value (in degrees) of distance for separation
-    '''
+    #''
     groups = []
     temp = 0
     
@@ -120,6 +127,7 @@ def separation(data, epsilon):
             groups.append(new_group)
             
     return groups
+'''
 
 def find_center(groups, data):
     '''
@@ -159,7 +167,7 @@ def download_files(utc, end_date, download_all = False):
     TODO: Add way to close opened tabs after successful download
     '''
 
-    download_dir = '/mnt/c/Users/Fabian Kistler/Downloads'
+    download_dir = '???' # change to your download directory
     directory_to_extract_to = 'connectivity_tool_downloads'
 
     while utc != end_date:
@@ -171,8 +179,20 @@ def download_files(utc, end_date, download_all = False):
             
             path = download_dir + '/' + folder_name + '.zip'
             
-            while not os.path.isfile(path):
+            count = 0
+            while not os.path.isfile(path) and count < 20:
                 time.sleep(1) # give the download some time...
+                count += 1
+                
+            # skip missing data
+            if count >= 20:                
+                path = download_dir + '/SOLO_PARKER_PFSS_SCTIME_ADAPT_FORECAST_' + utc[0:4] + utc[5:7] + utc[8:10] + 'T' + utc[11:13] + '0000.zip'
+                print(utc)
+                if os.path.isfile(path):
+                    os.remove(path)
+                
+                utc = misc_handler.next_utc(utc)
+                continue
             
             with zipfile.ZipFile(path, 'r') as zip_ref:
                 zip_ref.extractall(directory_to_extract_to)
@@ -180,7 +200,8 @@ def download_files(utc, end_date, download_all = False):
             for ending in ['_backgroundwl.png', '_filear.json', '_fileevent.ascii', '_filefieldline.ascii', '_filehcs.ascii', '_fileparam.yml', '_finallegendwl.png', '_filefp.ascii',
                            '_finalnolegendmag.png', '_finalnolegendwl.png', '_layerar.png', '_layercme.png', '_layerconnectivity.png', '_layercoronalhole.png', '_layerflare.png',
                            '_layerframe.png', '_layerhcs.png', '_layersubpoint.png', '_layerxflare.png', '_finalnolegendeuv171.png', '_finalnolegendeuv193.png', '_finalnolegendeuv304.png',
-                           '_finallegendeuv171.png', '_finallegendeuv193.png', '_finallegendeuv304.png', '_backgroundeui174.png', '_backgroundeui304.png']:
+                           '_finallegendeuv171.png', '_finallegendeuv193.png', '_finallegendeuv304.png', '_backgroundeui174.png', '_backgroundeui304.png', '_backgroundeuv304', '_backgroundeuv171',
+                           '_backgroundeuv193', '_backgroundmag']:
                 path_files = 'connectivity_tool_downloads/' + folder_name + ending
                 if os.path.isfile(path_files):
                     os.remove(path_files)
@@ -192,7 +213,7 @@ def download_files(utc, end_date, download_all = False):
     
     return
 
-def find_connected_flares(stix_flares, flare_start_id, flare_end_id, epsilon, delta, opt_output, plot_non_connected):
+def find_connected_flares(stix_flares, flare_start_id, flare_end_id, delta, opt_output, plot_non_connected):
     '''
     Function to find connected flares according to the magnetic connectivity tool.
     
@@ -217,6 +238,9 @@ def find_connected_flares(stix_flares, flare_start_id, flare_end_id, epsilon, de
 
     # cycle through specified range of flares [start, end]
     for flare_id in range(flare_start_id, flare_end_id + 1):
+        
+        print('MCT progress:    ' + str(math.floor((flare_id - flare_start_id) / (flare_end_id - flare_start_id) * 10000) / 100) + ' %')
+        
         # get coordinates of flare
         flare_lon = stix_flares['hgc_lon'][flare_id]
         flare_lat = stix_flares['hgc_lat'][flare_id]
@@ -248,23 +272,10 @@ def find_connected_flares(stix_flares, flare_start_id, flare_end_id, epsilon, de
         if opt_output:
             print("Connection tool data:")
             print(con_tool_data.drop(['R', 'DIST', 'HPLT', 'HPLN'], axis = 1))
-
-        '''
-        # build groups and compute its center with a defined metric
-        # TODO: define metric that accuratly represents possibly connected points/regions
-        groups = separation(con_tool_data.drop(['density', 'R', 'DIST', 'HPLT', 'HPLN'], axis = 1), epsilon)
-        center_data = find_center(groups, con_tool_data.drop(['SSW/FSW/M', 'R', 'DIST', 'HPLT', 'HPLN'], axis = 1))
-
-        if opt_output:
-            print(center_data)
-        '''
         
         connected = False
         min_dist = 360
         con_id = -1
-
-        center_dist = 360
-        center_id = -1
         
         flare_min_dist = 0
         con_flare_min_dist = 0
@@ -311,23 +322,6 @@ def find_connected_flares(stix_flares, flare_start_id, flare_end_id, epsilon, de
                 probability_no_att.append([flare_id, max(total_density), goes_flux])
                 if classification in ['M5', 'M6', 'M7', 'M8', 'M9']:
                     probability_M5plus.append([flare_id, max(total_density), goes_flux])
-        
-        '''
-        # same check with connection groups
-        # with good metric this may be mre accurate then checking each point separately
-            if i in center_data.index:
-                lon = center_data['CRLN'][i]
-                lat = center_data['CRLT'][i]
-                
-                # account for wrap around cases
-                lon_dist = min(abs(lon - flare_lon), abs(lon - flare_lon + 360), abs(lon - flare_lon - 360))
-                dist = math.sqrt(lon_dist ** 2 + (lat - flare_lat) ** 2)
-                if (dist < center_dist):
-                    center_dist = dist
-                    center_id = i
-                if (opt_output):
-                    print("Distance of flare origin to center point with id:  " + str(i) + "  is: " + str(dist))
-        '''
                 
         if connected:
             connected_flare_distances.append(con_flare_min_dist)
@@ -345,15 +339,17 @@ def find_connected_flares(stix_flares, flare_start_id, flare_end_id, epsilon, de
             else:
                 print("The flare " + str(flare_id) +  " is NOT magnetically connected to the Solar Orbiter.")  
 
-        # Output of results
-        if connected:
-            plots.plot(flare_id, closest_timestamp, [flare_lon, flare_lat], connected, p = [con_tool_data['CRLN'][con_id], con_tool_data['CRLT'][con_id]])
-            
-            # add connected flare to list
-            connected_flares.append(flare_id)
-        else:
-            if plot_non_connected:
-                plots.plot(flare_id, closest_timestamp, [flare_lon, flare_lat], connected)
+        if os.path.isfile("connectivity_tool_downloads/SOLO_PARKER_PFSS_SCTIME_ADAPT_SCIENCE_" + closest_timestamp[0:4] + closest_timestamp[5:7] + closest_timestamp[8:13] + "0000_finallegendmag.png"):   
+            # Output of results
+            if connected:
+                plots.plot(flare_id, closest_timestamp, [flare_lon, flare_lat], connected, p = [con_tool_data['CRLN'][con_id], con_tool_data['CRLT'][con_id]])
+                
+                # add connected flare to list
+                connected_flares.append(flare_id)
+                
+            else:
+                if plot_non_connected:
+                    plots.plot(flare_id, closest_timestamp, [flare_lon, flare_lat], connected)
                 
     plots.histogram(flare_distances, range(0, 180, 5), "Images/Hist/all_flares_distance.jpg")
     plots.histogram(connected_flare_distances, np.arange(0, math.ceil(delta), 0.2), "Images/Hist/con_tool_flares_distance.jpg")
@@ -383,10 +379,4 @@ def find_connected_flares(stix_flares, flare_start_id, flare_end_id, epsilon, de
         plots.histogram_2d_density([item[2] for item in probability_att_con], [item[1] for item in probability_att_con],
                                    [np.logspace(np.log10(min([item[2] for item in probability_att_con])), np.log10(max([item[2] for item in probability_att_con]))), np.arange(0, 105, 5)], "Images/Hist/2d_density_att_con")
     
-    '''
-    # 2-d plot
-    if len(probability_M5plus) != 0:
-        plots.histogram_2d_density([item[2] for item in probability_M5plus], [item[1] for item in probability_M5plus],
-                                   [np.logspace(np.log10(min([item[2] for item in probability_M5plus])), np.log10(max([item[2] for item in probability_M5plus]))), np.arange(0, 105, 5)], "Images/Hist/2d_density_M5plus")
-    '''
     return connected_flares, flare_distances
