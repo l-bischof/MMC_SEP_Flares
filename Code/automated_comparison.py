@@ -32,8 +32,6 @@ import misc_handler
 opt_output = False
 # choose if plots for non-connected flares should be made
 plot_non_connected = True
-# show all events
-show_all = False
 
 # work with data and search for events within the following timespan
 start_date = "2022-01-14"
@@ -48,14 +46,10 @@ stix_flares = stix_handler.read_list()
 
 # get range of flares that are within the defined timeframe
 flare_start_id, flare_end_id = stix_handler.flares_range(start_date, end_date, stix_flares['peak_UTC'])
-all_flares = range(flare_start_id, flare_end_id + 1)
 
 # returns a list of candidates the MCT (Magnetic Connectivity Tool) expects the Solar Orbiter to be connected with
 # flare_distances is currently not used for anything (has been added as it might yield interesting data)
 connected_flares, flare_distances = connectivity_tool.find_connected_flares(stix_flares, flare_start_id, flare_end_id, delta, opt_output, plot_non_connected)
-
-if (show_all):
-    connected_flares = all_flares
 
 # print("Connected flares in magentic connectivity tool: ", connected_flares)
 # print(len(connected_flares))
