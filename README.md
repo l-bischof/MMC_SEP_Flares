@@ -11,13 +11,18 @@ This project contains the code used for this project and should allow its user t
 ## Usage:
 
 1. Go into the *Code* directory and change the variable *download_dir* in *connectivity_tool.py* to the path to your download directory.
+   
 2. Generate the required datasets with *generate_epd_dataset.py* and *generate_solar_mach_dataset.py*.
-   a) In *generate_epd_dataset.py* set start and end date* to only generate the dataset for the required time period.
-   b) Depending on the time period that is wished to be examined, this might take quite a bit of memory space. Hence the upload of the full datasets is omitted.
-3. a) Run the script for the STEP sensor *step_comparison.py* after setting the start and end date correctly*.
-   b) Run the script for the EPT sensor *ept_comparison.py* after setting the start and end date correctly* and choosing the wished viewing angle.
+   
+    a. In *generate_epd_dataset.py* set start and end date* to only generate the dataset for the required time period.
+   
+    b. Depending on the time period that is wished to be examined, this might take quite a bit of memory space. Hence the upload of the full datasets is omitted.
 
-* write the date in the yyyy-mm-dd format
+3. a) Run the script for the STEP sensor *step_comparison.py* after setting the start and end date correctly*.
+
+3. b) Run the script for the EPT sensor *ept_comparison.py* after setting the start and end date correctly* and choosing the wished viewing angle.
+
+\* write the date in the yyyy-mm-dd format
 
 ## References:
 
