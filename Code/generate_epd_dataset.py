@@ -149,7 +149,9 @@ while date != misc_handler.next_date(end_date) and sensor == 'step':
 
     # combine data to 5min intervals and fill missing data with nan
     # then save the reduced data to a pickle file
-    epd_handler.reduce_data(df_step, sensor).to_pickle(dir_dest + sensor + '/' + date + '.pkl')
+    directory = dir_dest + sensor + '/'
+    os.makedirs(directory, exist_ok=True)
+    epd_handler.reduce_data(df_step, sensor).to_pickle(directory + date + '.pkl')
     
     # delete downloaded files to free up memory space
     # depending on timeframe files end with: '_V01.cdf', '_V02.cdf' or '_V03.cdf'
