@@ -4,6 +4,8 @@ import numpy as np
 from collections import Counter
 import pandas as pd
 import datetime
+import os
+from datetime import datetime
 
 import misc_handler
 
@@ -48,7 +50,8 @@ def plot(flare_id, utc, flare_loc, plot_p, p = [-1, 0]):
         plt.plot(p[0], p[1], "r^", markersize = 3, label = 'Closest potential connection point')
     
     plt.legend(prop = {'size': 3})
-        
+    
+    os.makedirs("Images/flare_connections/", exist_ok=True)
     fig.savefig("Images/flare_connections/con_point_" + str(flare_id) + ".jpg", bbox_inches = 'tight')
     
     plt.close()
@@ -59,6 +62,12 @@ def plot_epd_data(df, df_mean, df_std, sigma_factor, filename = "Images/epd_data
     '''
     plots epd data from pandas dataframe
     '''
+
+    connected_flares_peak_utc = misc_handler.parse_date_list(connected_flares_peak_utc)
+    epd_connected_flares_peak_utc = misc_handler.parse_date_list(epd_connected_flares_peak_utc)
+    events_epd_utc = events_epd_utc # Already a timestamp
+    all_flare_utc = misc_handler.parse_date_list(all_flare_utc)
+
     energies = [['0.0312 - 0.0354 MeV'], ['0.0334 - 0.0374 MeV'], ['0.0356 - 0.0396 MeV'], ['0.0382 - 0.0420 MeV'], ['0.0408 - 0.0439 MeV'], ['0.0439 - 0.0467 MeV'], ['0.0467 - 0.0505 MeV'],
                 ['0.0505 - 0.0542 MeV'], ['0.0542 - 0.0588 MeV'], ['0.0588 - 0.0635 MeV'], ['0.0635 - 0.0682 MeV'], ['0.0682 - 0.0739 MeV'], ['0.0739 - 0.0798 MeV'], ['0.0798 - 0.0866 MeV'],
                 ['0.0866 - 0.0942 MeV'], ['0.0942 - 0.1021 MeV'], ['0.1021 - 0.1107 MeV'], ['0.1107 - 0.1207 MeV'], ['0.1207 - 0.1314 MeV'], ['0.1314 - 0.1432 MeV'], ['0.1432 - 0.1552 MeV'],
@@ -160,6 +169,7 @@ def plot_epd_data(df, df_mean, df_std, sigma_factor, filename = "Images/epd_data
             axs[i].set_ylim(axs[i].get_ylim()[0], None)
             
     axs[0].xaxis.tick_top()
+    axs[0].set_xlim(*axs[3].get_xlim())
     axs[1].get_xaxis().set_visible(False)
     axs[2].get_xaxis().set_visible(False)
     

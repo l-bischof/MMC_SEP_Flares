@@ -293,3 +293,7 @@ def step_delay(date, length):
         dt.append(dist / v[i])
     
     return dt
+
+
+def parse_date_list(utc_times: list[str]):
+    return [datetime.datetime.fromisoformat(utc_time) for utc_time in utc_times]
