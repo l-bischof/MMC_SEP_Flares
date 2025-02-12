@@ -62,7 +62,8 @@ def reduce_data(df, sensor = 'ept'):
         time = datetime.datetime.strptime(date + " 00:00:00", "%y-%m-%d %H:%M:%S")
         time_delta = 1
     if (sensor == 'step'):
-        time = datetime.datetime.strptime(str(df.index[0].replace(microsecond = 0))[2:], "%y-%m-%d %H:%M:%S")
+        date_str = df.index[0].strftime("%y-%m-%d %H:%M:%S")
+        time = datetime.datetime.strptime(date_str, "%y-%m-%d %H:%M:%S")
         time_delta = 10
     
     start_index = df.index[0]
