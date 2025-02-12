@@ -3,9 +3,8 @@ import matplotlib as mpl
 import numpy as np
 from collections import Counter
 import pandas as pd
-import datetime
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import misc_handler
 
@@ -313,10 +312,10 @@ def plot_step_data(df, df_mean, df_std, sigma_factor, offset, filename = "Images
     for i in events_epd_utc:
         for j in range(1, panels):
             if first_EPD and j == 0:
-                axs[j].axvspan(i[0] + datetime.timedelta(0, offset[j] * 300), i[1] + datetime.timedelta(0, offset[j] * 300), color = 'b', alpha = 0.2, label = 'electron event')
+                axs[j].axvspan(i[0] + timedelta(0, offset[j] * 300), i[1] + timedelta(0, offset[j] * 300), color = 'b', alpha = 0.2, label = 'electron event')
                 first_EPD = False
             else:
-                axs[j].axvspan(i[0] + datetime.timedelta(0, offset[j] * 300), i[1] + datetime.timedelta(0, offset[j] * 300), color = 'b', alpha = 0.2)
+                axs[j].axvspan(i[0] + timedelta(0, offset[j] * 300), i[1] + timedelta(0, offset[j] * 300), color = 'b', alpha = 0.2)
     
     axs[0].xaxis.tick_top()
     
