@@ -118,41 +118,10 @@ def next_date(current_date):
     parameters:
     current_date: string of current date (yyyy-mm-dd)
     '''
-    year = current_date[0:4]
-    month = current_date[5:7]
-    day = current_date[8:10]
+    current = datetime.datetime.strptime(current_date, "%Y-%m-%d").date()
+    current += datetime.timedelta(days=1)
     
-    # last day of [January, March, April, May, June, Juli, August, September, October, November]
-    if ((month in ['01', '03', '05', '07', '08', '10']) and day == '31') or ((month in ['04', '06', '09', '11']) and day == '30'):
-        month = str(int('1' + month) + 1)[1:]
-        day = '01'
-        
-        return year + '-' + month + '-' + day
-    
-    # last day of [December]
-    if month == '12' and day == '31':
-        year = str(int('1' + year) + 1)[1:]
-        month = '01'
-        day = '01'
-        
-        return year + '-' + month + '-' + day
-        
-    # last day of [February]
-    if month == '02' and (day in ['28', '29']):
-        # leap year check
-        if int(year) % 4 == 0 and day == '28':
-            day = '29'
-            
-            return year + '-' + month + '-' + day
-        
-        month = str(int('1' + month) + 1)[1:]
-        day = '01'
-        
-        return year + '-' + month + '-' + day
-    
-    day = str(int('1' + day) + 1)[1:]
-    
-    return year + '-' + month + '-' + day
+    return str(current)
 
 def previous_date(current_date):
     '''
@@ -161,50 +130,10 @@ def previous_date(current_date):
     parameters:
     current_date: string of current date (yyyy-mm-dd)
     '''
-    year = current_date[0:4]
-    month = current_date[5:7]
-    day = current_date[8:10]
+    current = datetime.datetime.strptime(current_date, "%Y-%m-%d").date()
+    current -= datetime.timedelta(days=1)
     
-    # current day is first of a month
-    if day == '01':
-        # last month had 31 days
-        if month in ['02', '04', '06', '08', '09', '11']:
-            month = str(int('1' + month) - 1)[1:]
-            day = '31'
-            
-            return year + '-' + month + '-' + day
-        
-        # last month had 30 days
-        if month in ['05', '07', '10', '12']:
-            month = str(int('1' + month) - 1)[1:]
-            day = '31'
-            
-            return year + '-' + month + '-' + day
-        
-        # last month was december of last year
-        if month == '01':
-            year = str(int('1' + year) - 1)[1:]
-            month = '12'
-            day = '31'
-            
-            return year + '-' + month + '-' + day
-            
-        # last month is february
-        if month == '03':
-            month = '02'
-            # leap year check
-            if int(year) % 4 == 0:
-                day = '29'
-                
-                return year + '-' + month + '-' + day
-            
-            day = '28'
-            
-            return year + '-' + month + '-' + day
-    
-    day = str(int('1' + day) - 1)[1:]
-    
-    return year + '-' + month + '-' + day
+    return str(current)
 
 def next_utc(current_utc):
     '''
