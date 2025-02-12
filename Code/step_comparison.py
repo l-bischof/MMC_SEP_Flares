@@ -26,8 +26,8 @@ show_all = False
 # work with data and search for events within the following timespan
 # -> do not simulate before and after 22.10.2021 in one run!!!
 # --> the change in energy bin ranges does not allow for an automated comparison of data before and after the change.
-start_date = "2022-01-14"
-end_date = "2022-01-14"
+start_date = '2024-05-20'
+end_date = '2024-05-31'
 
 # --------------------------------------- STIX ---------------------------------------
 
