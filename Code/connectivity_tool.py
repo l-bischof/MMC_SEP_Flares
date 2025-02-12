@@ -167,7 +167,7 @@ def download_files(utc, end_date, download_all = False):
     TODO: Add way to close opened tabs after successful download
     '''
 
-    download_dir = '???' # change to your download directory
+    download_dir = 'C:\\Users\\louis.bischof\\Downloads\\' # change to your download directory
     directory_to_extract_to = 'connectivity_tool_downloads'
 
     while utc != end_date:
