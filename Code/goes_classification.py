@@ -4,6 +4,7 @@ import matplotlib as mpl
 from collections import Counter
 import pandas as pd
 import numpy as np
+import os
 
 import stix_handler
 import plots
@@ -169,6 +170,7 @@ for i in range(len(stix_flares)):
     
     goes_classification.append(classification)
 
+os.makedirs("Images/Hist/", exist_ok=True)
 histogram_variable(goes_classification, "Images/Hist/all_flare_classes.jpg", "estimated GOES class")
 
 histogram_vis(vis_earth, not_vis_earth, "Images/Hist/flare_vis_earth.jpg")

@@ -19,7 +19,7 @@ Deletes automatically downloaded files with original data after data reduction i
 '''
 
 dir_dest = 'EPD_Dataset/'
-sensor = 'step'
+sensor = 'ept'
 
 # Downloads complete for 2021-01-01 to 2024-05-31
 date = '2024-05-20'
@@ -76,7 +76,9 @@ while date != misc_handler.next_date(end_date) and sensor == 'ept':
         df_electron_red = epd_handler.reduce_data(df_electron)
         
         # define location to save files
+        os.makedirs(dir_dest + sensor + '/' + viewing + '/ion/', exist_ok=True)
         dest_ion = dir_dest + sensor + '/' + viewing + '/ion/' + date + '.pkl'
+        os.makedirs(dir_dest + sensor + '/' + viewing + '/electron/', exist_ok=True)
         dest_electron = dir_dest + sensor + '/' + viewing + '/electron/' + date + '.pkl'
         
         # sum up all data for omni viewing
@@ -92,7 +94,9 @@ while date != misc_handler.next_date(end_date) and sensor == 'ept':
         df_electron_red.to_pickle(dest_electron)
     
     # define location to save omni files 
+    os.makedirs(dir_dest + sensor + '/omni/ion/', exist_ok=True)
     dest_ion = dir_dest + sensor + '/omni/ion/' + date + '.pkl'
+    os.makedirs(dir_dest + sensor + '/omni/electron/', exist_ok=True)
     dest_electron = dir_dest + sensor + '/omni/electron/' + date + '.pkl'
     
     # division by 4 as currently data is sum of 4 angles
