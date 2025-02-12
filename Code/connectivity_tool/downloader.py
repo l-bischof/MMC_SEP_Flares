@@ -42,7 +42,6 @@ def _download_set(date_point: datetime):
     download_link = extract_download_url(website_content)
     
     data_req = requests.get(download_link)
-    print(download_link)
     virtual_file = BytesIO(data_req.content)
     return virtual_file
 
