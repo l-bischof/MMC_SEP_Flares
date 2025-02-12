@@ -134,58 +134,6 @@ def previous_date(current_date):
     current -= datetime.timedelta(days=1)
     
     return str(current)
-
-def next_utc(current_utc):
-    '''
-    Computes next timestamp for connectivity tool download.
-    
-    parameters:
-    current_utc:    string of current timestamp
-    '''
-    year = current_utc[0:4]
-    month = current_utc[5:7]
-    day = current_utc[8:10]
-    hour = current_utc[11:13]
-    
-    # time is [00:00:00, 06:00:00, 12:00:00] -> not changing the date
-    if hour in ['00', '06', '12']:
-        hour = str(int('1' + hour) + 6)[1:]
-        return year + '-' + month + '-' + day + '/' + hour + '0000'
-    
-    # time is [18:00:00] -> changing the date
-    if hour == '18':
-        hour = '00'
-        
-        # last day of [January, March, April, May, June, Juli, August, September, October, November]
-        if (month in ['01', '03', '05', '07', '08', '10'] and day == '31') or (month in ['04', '06', '09', '11'] and day == '30'):
-            month = str(int('1' + month) + 1)[1:]
-            day = '01'
-            
-            return year + '-' + month + '-' + day + '/' + hour + '0000'
-        
-        # last day of [December]
-        if month == '12' and day == '31':
-            year = str(int('1' + year) + 1)[1:]
-            month = '01'
-            day = '01'
-            
-            return year + '-' + month + '-' + day + '/' + hour + '0000'
-            
-        # last day of [February]
-        if month == '02' and day in ['28', '29']:
-            if int(year) % 4 == 0 and day == '28':
-                day = '29'
-                
-                return year + '-' + month + '-' + day + '/' + hour + '0000'
-            
-            month = str(int('1' + month) + 1)[1:]
-            day = '01'
-            
-            return year + '-' + month + '-' + day + '/' + hour + '0000'
-        
-        day = str(int('1' + day) + 1)[1:]
-        
-        return year + '-' + month + '-' + day + '/' + hour + '0000'
     
 def intersection(lst1, lst2):
     lst3 = [value for value in lst1 if value in lst2]

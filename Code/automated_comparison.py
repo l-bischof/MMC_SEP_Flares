@@ -6,7 +6,7 @@ It determines if the flares origin is within delta (to be chosen by the user) de
 connected point on the sun's surface.
 
 programming:
-TODO: Find a better way to collect Magnetic Connectivity Tool (MCT) data, e.g. without opening a browser window for every 6-hour period needed to be downloaded
+DONE: Find a better way to collect Magnetic Connectivity Tool (MCT) data, e.g. without opening a browser window for every 6-hour period needed to be downloaded
 
 scientific:
 TODO: improve metric to classify possible connection points and account for their likelyhood
