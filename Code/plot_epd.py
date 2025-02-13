@@ -18,8 +18,8 @@ df_ion = epd_handler.load_pickles(sensor, viewing, start_date, end_date, 'ion')
 df_electron = epd_handler.load_pickles(sensor, viewing, start_date, end_date, 'electron')
 
 # Define timespan for background estimation
-back_start_date = "2023-01-24"
-back_end_date = "2023-01-24"
+back_start_date = config.START_DATE
+back_end_date = config.END_DATE
 
 back_ion = epd_handler.background(epd_handler.load_pickles(sensor, viewing, back_start_date, back_end_date, 'ion'))
 back_electron = epd_handler.background(epd_handler.load_pickles(sensor, viewing, back_start_date, back_end_date, 'electron'))
