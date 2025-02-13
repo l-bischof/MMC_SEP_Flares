@@ -36,8 +36,8 @@ opt_output = False
 plot_non_connected = True
 
 # work with data and search for events within the following timespan
-start_date = "2024-05-20"
-end_date = "2024-05-31"
+start_date = config.START_DATE
+end_date = config.END_DATE
 
 # --------------------------------------- STIX ---------------------------------------
 
