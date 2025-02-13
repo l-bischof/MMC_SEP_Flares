@@ -20,11 +20,11 @@ Deletes automatically downloaded files with original data after data reduction i
 '''
 
 dir_dest = f'{config.CACHE_DIR}/EPD_Dataset/'
-sensor = 'ept'
+sensor = 'step'
 
 # Downloads complete for 2021-01-01 to 2024-05-31
-date = '2024-05-20'
-end_date = '2024-05-31'
+date = config.START_DATE
+end_date = config.END_DATE
 
 # define column names arrays for ept and step
 ion_columns = []
@@ -157,14 +157,6 @@ while date != misc.next_date(end_date) and sensor == 'step':
     directory = dir_dest + sensor + '/'
     os.makedirs(directory, exist_ok=True)
     epd_handler.reduce_data(df_step, sensor).to_pickle(directory + date + '.pkl')
-    
-    # delete downloaded files to free up memory space
-    # depending on timeframe files end with: '_V01.cdf', '_V02.cdf' or '_V03.cdf'
-    for i in ['rates', 'main']:
-        for j in ['1', '2', '3']:
-            path = "l2/epd/" + sensor + "/solo_L2_epd-" + sensor + "-" + i + "_" + date[0:4] + date[5:7] + date[8:10] + "_V0" + j + ".cdf"
-            if os.path.isfile(path):
-                os.remove(path)
     
     # get next date
     date = misc.next_date(date)

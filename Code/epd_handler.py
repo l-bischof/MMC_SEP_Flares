@@ -32,12 +32,12 @@ def load_data(sensor, utc_start, utc_end, viewing = 'omni'):
     # df_2: includes Electron_Flux, Electron_Uncertainty, Electron_Rate, ...
     # energies: includes the bins of energy ranges
     if sensor == 'ept':
-        df_1, df_2, energies = epd_load(sensor, startdate, enddate, level, viewing, path = None, autodownload = True, only_averages = False)
+        df_1, df_2, energies = epd_load(sensor, startdate, enddate, level, viewing, path = f"{config.CACHE_DIR}/_solo/", autodownload = True, only_averages = False)
         
         return df_1, df_2, energies
     
     if sensor == 'step':
-        df_1, energies = epd_load(sensor, startdate, enddate, level, viewing, path = None, autodownload = True, only_averages = False)
+        df_1, energies = epd_load(sensor, startdate, enddate, level, viewing, path = f"{config.CACHE_DIR}/_solo/", autodownload = True, only_averages = False)
         
         return df_1, energies
 
