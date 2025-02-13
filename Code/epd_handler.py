@@ -5,7 +5,7 @@ import math
 import datetime
 import config
 
-import misc_handler
+import misc
 import plots
 
 # Factor with which epd data gets compressed. (Sum over x seconds)
@@ -154,7 +154,7 @@ def load_pickles(sensor, start_date, end_date, particle = 'electron', viewing = 
     df = pd.DataFrame()
     date = start_date
     count = 0
-    while date != misc_handler.next_date(end_date):
+    while date != misc.next_date(end_date):
         if sensor == 'ept':
             df_new = pd.read_pickle(f'{config.CACHE_DIR}/EPD_Dataset/' + sensor + '/' + viewing + '/' + particle + '/' + date + '.pkl')
             
@@ -164,7 +164,7 @@ def load_pickles(sensor, start_date, end_date, particle = 'electron', viewing = 
         df = pd.concat([df, df_new], ignore_index = True)
         
         count += 1
-        date = misc_handler.next_date(date)
+        date = misc.next_date(date)
     
     # change index back to datetime with correct minutes
     datetime_series = pd.Series(pd.date_range(start_date, periods = 86400 / time_resolution * count, freq = str(time_resolution) + "S"))
@@ -290,7 +290,7 @@ def bin_upper_energy_limit(bin, type):
     bin:    int of energy bin that we look at
     type:   string of particle type [ion, electron]
     '''
-    return float(misc_handler.get_epd_bins(type)[bin][0][9:15])
+    return float(misc.get_epd_bins(type)[bin][0][9:15])
     
 
 def compute_particle_speed(n_bins, particle_type):

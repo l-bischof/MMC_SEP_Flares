@@ -1,4 +1,4 @@
-from misc_handler import *
+from misc import *
 import unittest
 
 class TestMisc(unittest.TestCase):

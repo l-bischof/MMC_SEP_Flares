@@ -3,7 +3,7 @@ import datetime
 import math
 import config
 
-import misc_handler
+import misc
 
 def read_list():
     '''
@@ -67,7 +67,7 @@ def flares_range(start_date, end_date, flare_list_times):
             if (start_date == flare_list_times[i][0:10]):
                 start_id = i
             i += 1
-        start_date = misc_handler.next_date(start_date)    
+        start_date = misc.next_date(start_date)    
     
     # find end_id
     end_id = -1
@@ -77,7 +77,7 @@ def flares_range(start_date, end_date, flare_list_times):
             if (end_date == flare_list_times[i][0:10]):
                 end_id = i
             i -= 1
-        end_date = misc_handler.previous_date(end_date)
+        end_date = misc.previous_date(end_date)
     
     return start_id, end_id
 

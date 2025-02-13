@@ -24,7 +24,7 @@ import stix_handler
 import connectivity_tool
 import plots
 import epd_handler
-import misc_handler
+import misc
 
 import config
 
@@ -98,12 +98,12 @@ if flare_end_id != -1:
         utc = stix_flares['peak_UTC'][i]
         timestamp = pd.Timestamp(utc[0:10] + " " + utc[11:19])
         
-        delayed_utc.append(misc_handler.add_delay('electron', i, timestamp, indirect_factor, stix_flares['solo_position_AU_distance'][i]))
+        delayed_utc.append(misc.add_delay('electron', i, timestamp, indirect_factor, stix_flares['solo_position_AU_distance'][i]))
         
         utc_start = stix_flares['start_UTC'][i]
         timestamp = pd.Timestamp(utc_start[0:10] + " " + utc_start[11:19])
         
-        delayed_utc_start.append(misc_handler.add_delay('electron', i, timestamp, indirect_factor, stix_flares['solo_position_AU_distance'][i]))
+        delayed_utc_start.append(misc.add_delay('electron', i, timestamp, indirect_factor, stix_flares['solo_position_AU_distance'][i]))
         
     for i in range(len(delayed_utc)):
         # EPT has 34 energy channels

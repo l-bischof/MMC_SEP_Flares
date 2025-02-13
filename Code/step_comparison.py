@@ -8,7 +8,7 @@ import stix_handler
 import connectivity_tool
 import plots
 import epd_handler
-import misc_handler
+import misc
 import math
 import config
 
@@ -96,7 +96,7 @@ running_mean, running_std = epd_handler.running_average(df_step_electron)
 print("Running averages computed...")
 
 # compute expected delay of arriving particles
-dt = misc_handler.step_delay(start_date, length)
+dt = misc.step_delay(start_date, length)
 
 # find fastest channel -> minimal delay
 if length == 32:
@@ -149,7 +149,7 @@ if flare_end_id != -1:
         utc = stix_flares['peak_UTC'][i]
         timestamp = pd.Timestamp(utc[0:10] + " " + utc[11:19])
         
-        dt = misc_handler.step_delay(utc, length)
+        dt = misc.step_delay(utc, length)
         
         delay = []
         for j in range(length):

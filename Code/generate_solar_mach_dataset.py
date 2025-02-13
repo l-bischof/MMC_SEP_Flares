@@ -1,7 +1,7 @@
 import pandas as pd
 
 import stix_handler
-import misc_handler
+import misc
 import config
 
 # read STIX flare list and extract coordinates of the origin
@@ -27,6 +27,6 @@ for i in stix_flares.index[start:]:
     
     timestamp = stix_flares['peak_UTC'][i]
     print("working on", timestamp[0:10], timestamp[11:16])
-    df['Parker_Spiral_Distance'][i] = misc_handler.parker_spiral_distance(timestamp)
+    df['Parker_Spiral_Distance'][i] = misc.parker_spiral_distance(timestamp)
 
 df.to_pickle(dest)

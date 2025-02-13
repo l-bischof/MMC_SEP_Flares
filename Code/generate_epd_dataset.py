@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import datetime
 
-import misc_handler
+import misc
 import epd_handler
 import config
 
@@ -50,7 +50,7 @@ for i in [step_columns_short, step_columns_long]:
     i.append('QUALITY_FLAG')
 
 # read data day by day and store it as pickle file
-while date != misc_handler.next_date(end_date) and sensor == 'ept':
+while date != misc.next_date(end_date) and sensor == 'ept':
     print('Currently working on files of: ' + date)
     
     # initialize dataframes for omni viewing (sum of all angles divided by 4)
@@ -117,9 +117,9 @@ while date != misc_handler.next_date(end_date) and sensor == 'ept':
                 os.remove(path)
     
     # get next date
-    date = misc_handler.next_date(date)   
+    date = misc.next_date(date)   
     
-while date != misc_handler.next_date(end_date) and sensor == 'step':
+while date != misc.next_date(end_date) and sensor == 'step':
     print('Currently working on files of: ' + date)
     
     df_step, energies = epd_handler.load_data(sensor, date, date)
@@ -167,4 +167,4 @@ while date != misc_handler.next_date(end_date) and sensor == 'step':
                 os.remove(path)
     
     # get next date
-    date = misc_handler.next_date(date)
+    date = misc.next_date(date)

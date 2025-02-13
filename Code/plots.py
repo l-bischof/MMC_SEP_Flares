@@ -7,7 +7,7 @@ import os
 from datetime import timedelta
 import config
 
-import misc_handler
+import misc
 
 # set resolution of plot
 dpi = 300
@@ -63,10 +63,10 @@ def plot_epd_data(df, df_mean, df_std, sigma_factor, filename = f"{config.OUTPUT
     plots epd data from pandas dataframe
     '''
 
-    connected_flares_peak_utc = misc_handler.parse_date_list(connected_flares_peak_utc)
-    epd_connected_flares_peak_utc = misc_handler.parse_date_list(epd_connected_flares_peak_utc)
+    connected_flares_peak_utc = misc.parse_date_list(connected_flares_peak_utc)
+    epd_connected_flares_peak_utc = misc.parse_date_list(epd_connected_flares_peak_utc)
     events_epd_utc = events_epd_utc # Already a timestamp
-    all_flare_utc = misc_handler.parse_date_list(all_flare_utc)
+    all_flare_utc = misc.parse_date_list(all_flare_utc)
 
     energies = [['0.0312 - 0.0354 MeV'], ['0.0334 - 0.0374 MeV'], ['0.0356 - 0.0396 MeV'], ['0.0382 - 0.0420 MeV'], ['0.0408 - 0.0439 MeV'], ['0.0439 - 0.0467 MeV'], ['0.0467 - 0.0505 MeV'],
                 ['0.0505 - 0.0542 MeV'], ['0.0542 - 0.0588 MeV'], ['0.0588 - 0.0635 MeV'], ['0.0635 - 0.0682 MeV'], ['0.0682 - 0.0739 MeV'], ['0.0739 - 0.0798 MeV'], ['0.0798 - 0.0866 MeV'],
@@ -144,7 +144,7 @@ def plot_epd_data(df, df_mean, df_std, sigma_factor, filename = f"{config.OUTPUT
             else:
                 axs[j + 1].axvline(flare_utc, color = 'b')
         
-    for i in misc_handler.intersection(epd_connected_flares_peak_utc, connected_flares_peak_utc):
+    for i in misc.intersection(epd_connected_flares_peak_utc, connected_flares_peak_utc):
         for j in range(3):
             if first_con and j == 2:
                 axs[j + 1].axvline(i, color = 'r', label = 'connected flare-electron event')
@@ -301,7 +301,7 @@ def plot_step_data(df, df_mean, df_std, sigma_factor, offset, filename = f"{conf
             else:
                 axs[j].axvline(flare_utc, color = 'b')
         
-    for i in misc_handler.intersection(epd_connected_flares_peak_utc, connected_flares_peak_utc):
+    for i in misc.intersection(epd_connected_flares_peak_utc, connected_flares_peak_utc):
         for j in range(1, panels):
             if first_con and j == 1:
                 axs[j].axvline(i, color = 'r', label = 'connected flare-electron event')
