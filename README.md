@@ -28,7 +28,7 @@ This project contains the code used for this project and should allow its user t
 
 (1) J. Gieseler, N. Dresing, C. Palmroos, J. L. Freiherr von Forstner, D. J. Price, R. Vainio, A. Kouloumvakos, L. Rodríguez-García, D. Trotta, V. Génot et al., “Solar-mach: An opensource tool to analyze solar magnetic connection configurations,” Frontiers in Astronomy and Space Sciences, vol. 9, p. 1058810, 2023.
 
-(2) L. Hayes, H. Collier, and A. Battaglia, “Solar orbiter/stix science flare list,” URL = https://github.com/hayesla/stix flarelist science.
+(2) L. Hayes, H. Collier, and A. Battaglia, “Solar orbiter/stix science flare list,” URL = [https://github.com/hayesla/stix](https://github.com/hayesla/stix_flarelist_science) flarelist science.
 
 (3) S. Krucker, G. J. Hurford, O. Grimm, S. Kögl, H.-P. Gröbelbauer, L. Etesi, D. Casadei, A. Csillaghy, A. O. Benz, N. G. Arnold et al., “The spectrometer/telescope for imaging x-rays (stix),” Astronomy & Astrophysics, vol. 642, p. A15, 2020.
 
