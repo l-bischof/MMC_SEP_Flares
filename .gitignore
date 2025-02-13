@@ -1,10 +1,12 @@
 Cache/connectivity_tool_downloads/
+Cache/_solo
 
 Code/*.txt
 Code/*.xslx
 Code/l2
 
 Data/
+!Code/tests/data
 
 Code/flare_list/adjust_idx.py
 EPD_Dataset/

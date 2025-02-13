@@ -69,8 +69,13 @@ def reduce_data(df, sensor = 'ept'):
     
     start_index = df.index[0]
     
+    max_allowed_value = pd.Timestamp(df.index[0].date() + datetime.timedelta(days=1))
     # loop through every index of given dataframe, this ensures to include all data that is given to be copied to reduced data
     for i in df.index:
+        if i > max_allowed_value:
+            # A point from the next day was included in the dataset, we are done here
+            print("Skipping Datapoint: Wrong day", i, max_allowed_value, df.index.get_loc(i))
+            break
         next_timestamp = i.replace(microsecond = 0) # round to seconds (always round down)
         
         # if one second is skipped due to instrument delay, adjust time
