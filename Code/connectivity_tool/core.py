@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 import config
 import stix_handler
 import plots
-import goes_classification
+from .goes import compute_goes_flux, get_goes_classification
 
 
 def read_data(utc):
@@ -191,10 +191,10 @@ def find_connected_flares(stix_flares, flare_start_id, flare_end_id, delta, opt_
         dist = stix_flares['solo_position_AU_distance'][flare_id]
         scale = dist**2
         
-        goes_flux = goes_classification.compute_goes_flux(counts * scale / 4) # STIX list has counts over 4s in it
+        goes_flux = compute_goes_flux(counts * scale / 4) # STIX list has counts over 4s in it
         
         if not stix_flares['att_in'][flare_id]:
-            classification = goes_classification.get_goes_classification(goes_flux)
+            classification = get_goes_classification(goes_flux)
         else:
             att_flux = goes_flux
             goes_flux = 10**-3.5
