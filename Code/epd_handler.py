@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import math
 import datetime
+import config
 
 import misc_handler
 import plots
@@ -155,10 +156,10 @@ def load_pickles(sensor, start_date, end_date, particle = 'electron', viewing = 
     count = 0
     while date != misc_handler.next_date(end_date):
         if sensor == 'ept':
-            df_new = pd.read_pickle('EPD_Dataset/' + sensor + '/' + viewing + '/' + particle + '/' + date + '.pkl')
+            df_new = pd.read_pickle(f'{config.CACHE_DIR}/EPD_Dataset/' + sensor + '/' + viewing + '/' + particle + '/' + date + '.pkl')
             
         if sensor == 'step':
-            df_new = pd.read_pickle('EPD_Dataset/' + sensor + '/' + date + '.pkl')
+            df_new = pd.read_pickle(f'{config.CACHE_DIR}/EPD_Dataset/' + sensor + '/' + date + '.pkl')
         
         df = pd.concat([df, df_new], ignore_index = True)
         
@@ -277,7 +278,7 @@ def find_event(df, mean, std, sigma_factor):
         events.append(new_event) # save newly found event in list
         # print('event lasted until: ' + str(end_time) + ' and might continue longer then time horizon spezified.')
 
-    plots.histogram(max_mem, np.arange(0, 12, 0.5), "Images/Hist/magnitude_detected_events.jpg")
+    plots.histogram(max_mem, np.arange(0, 12, 0.5), f"{config.OUTPUT_DIR}/Images/Hist/magnitude_detected_events.jpg")
     
     return events
 

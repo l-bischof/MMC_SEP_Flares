@@ -4,7 +4,8 @@ import numpy as np
 from collections import Counter
 import pandas as pd
 import os
-from datetime import datetime, timedelta
+from datetime import timedelta
+import config
 
 import misc_handler
 
@@ -39,7 +40,7 @@ def plot(flare_id, utc, flare_loc, plot_p, p = [-1, 0]):
     p = scale_point(p)
     flare_loc = scale_point(flare_loc)
     
-    img = plt.imread("connectivity_tool_downloads/SOLO_PARKER_PFSS_SCTIME_ADAPT_SCIENCE_" + timestamp + "_finallegendmag.png")
+    img = plt.imread(f"{config.CACHE_DIR}/connectivity_tool_downloads/SOLO_PARKER_PFSS_SCTIME_ADAPT_SCIENCE_" + timestamp + "_finallegendmag.png")
     plt.imshow(img)
     plt.axis('off')
     plt.plot(flare_loc[0], flare_loc[1], "oc", markersize = 3, label = 'Flare origin')  # og:shorthand for green circle
@@ -50,14 +51,14 @@ def plot(flare_id, utc, flare_loc, plot_p, p = [-1, 0]):
     
     plt.legend(prop = {'size': 3})
     
-    os.makedirs("Images/flare_connections/", exist_ok=True)
-    fig.savefig("Images/flare_connections/con_point_" + str(flare_id) + ".jpg", bbox_inches = 'tight')
+    os.makedirs(f"{config.OUTPUT_DIR}/Images/flare_connections/", exist_ok=True)
+    fig.savefig(f"{config.OUTPUT_DIR}/Images/flare_connections/con_point_" + str(flare_id) + ".jpg", bbox_inches = 'tight')
     
     plt.close()
     
     return
 
-def plot_epd_data(df, df_mean, df_std, sigma_factor, filename = "Images/epd_data.jpg", connected_flares_peak_utc = [], epd_connected_flares_peak_utc = [], events_epd_utc = [], all_flare_utc = []):
+def plot_epd_data(df, df_mean, df_std, sigma_factor, filename = f"{config.OUTPUT_DIR}/Images/epd_data.jpg", connected_flares_peak_utc = [], epd_connected_flares_peak_utc = [], events_epd_utc = [], all_flare_utc = []):
     '''
     plots epd data from pandas dataframe
     '''
@@ -187,7 +188,7 @@ def plot_epd_data(df, df_mean, df_std, sigma_factor, filename = "Images/epd_data
     
     return
 
-def plot_step_data(df, df_mean, df_std, sigma_factor, offset, filename = "Images/epd_data.jpg", connected_flares_peak_utc = [], epd_connected_flares_peak_utc = [], events_epd_utc = [], all_flare_utc = []):
+def plot_step_data(df, df_mean, df_std, sigma_factor, offset, filename = f"{config.OUTPUT_DIR}/Images/epd_data.jpg", connected_flares_peak_utc = [], epd_connected_flares_peak_utc = [], events_epd_utc = [], all_flare_utc = []):
     '''
     plots epd data from pandas dataframe
     
@@ -340,7 +341,7 @@ def plot_step_data(df, df_mean, df_std, sigma_factor, offset, filename = "Images
     
     return
 
-def histogram(data, bins, filename = 'Images/Hist/histogram.jpg', xlabel = ''):
+def histogram(data, bins, filename = f"{config.OUTPUT_DIR}/Images/Hist/histogram.jpg", xlabel = ''):
     '''
     Function to make a histogram. Primarily used to generate a histogram of how far from the flares origin the possible connection points are.
     
@@ -362,7 +363,7 @@ def histogram(data, bins, filename = 'Images/Hist/histogram.jpg', xlabel = ''):
     
     return
 
-def histogram_2d(xdata, ydata, bins, filename = 'Images/Hist/histogram.jpg'):
+def histogram_2d(xdata, ydata, bins, filename = f"{config.OUTPUT_DIR}/Images/Hist/histogram.jpg"):
     plt.clf()
 
     hist = np.histogram2d(xdata, ydata, bins = (bins[0], bins[1]))
@@ -385,7 +386,7 @@ def histogram_2d(xdata, ydata, bins, filename = 'Images/Hist/histogram.jpg'):
     
     plt.savefig(filename, bbox_inches = 'tight')
     
-def histogram_2d_density(xdata, ydata, bins, filename = 'Images/Hist/histogram.jpg'):
+def histogram_2d_density(xdata, ydata, bins, filename = f"{config.OUTPUT_DIR}/Images/Hist/histogram.jpg"):
     plt.clf()
 
     hist = np.histogram2d(xdata, ydata, bins = (bins[0], bins[1]))
@@ -408,7 +409,7 @@ def histogram_2d_density(xdata, ydata, bins, filename = 'Images/Hist/histogram.j
     
     # plt.savefig(filename, bbox_inches = 'tight')
     
-def histogram_2d_density_norm(xdata, ydata, bins, filename = 'Images/Hist/histogram.jpg'):
+def histogram_2d_density_norm(xdata, ydata, bins, filename = f"{config.OUTPUT_DIR}/Images/Hist/histogram.jpg"):
     plt.clf()
 
     hist = np.histogram2d(xdata, ydata, bins = (bins[0], bins[1]))

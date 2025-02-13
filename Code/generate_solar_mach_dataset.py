@@ -2,15 +2,16 @@ import pandas as pd
 
 import stix_handler
 import misc_handler
+import config
 
 # read STIX flare list and extract coordinates of the origin
 stix_flares = stix_handler.read_list()
 
 df = pd.DataFrame(index = range(len(stix_flares)), columns = ['Parker_Spiral_Distance'])
 
-dest = "SolarMACH/parker_spiral_distance.pkl"
+dest = f"{config.CACHE_DIR}/SolarMACH/parker_spiral_distance.pkl"
 
-dest_temp = "SolarMACH/parker_spiral_distance_temp.pkl"
+dest_temp = f"{config.CACHE_DIR}/SolarMACH/parker_spiral_distance_temp.pkl"
 start = 0 # change this variable you want to append new data without doing everything again e.g. in case of a crash in the process
 
 if start != 0:

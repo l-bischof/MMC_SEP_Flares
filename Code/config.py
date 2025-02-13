@@ -1,0 +1,5 @@
+OUTPUT_DIR = "../Data"
+CACHE_DIR = "../Cache"
+
+START_DATE = '2024-05-20'
+END_DATE = '2024-05-31'

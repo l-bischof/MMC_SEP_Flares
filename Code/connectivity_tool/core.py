@@ -7,15 +7,12 @@ where the timestamp can only be [000000, 060000, 120000, 180000] as the measurem
 from .downloader import download_files
 
 import pandas as pd
-import zipfile
-import time
-import webbrowser
 import os
 import math
 import numpy as np
 from datetime import datetime, timedelta
 
-import misc_handler
+import config
 import stix_handler
 import plots
 import goes_classification
@@ -29,7 +26,7 @@ def read_data(utc):
         -> this will open a new browser window
     '''
     timestamp = utc[0:4] + utc[5:7] + utc[8:13] + '0000'
-    filename = 'connectivity_tool_downloads/SOLO_PARKER_PFSS_SCTIME_ADAPT_SCIENCE_' + timestamp + '_fileconnectivity.ascii'
+    filename = f'{config.CACHE_DIR}/connectivity_tool_downloads/SOLO_PARKER_PFSS_SCTIME_ADAPT_SCIENCE_' + timestamp + '_fileconnectivity.ascii'
     
     if not os.path.isfile(filename):
         start_date = datetime.fromisoformat(utc)
@@ -282,7 +279,7 @@ def find_connected_flares(stix_flares, flare_start_id, flare_end_id, delta, opt_
             else:
                 print("The flare " + str(flare_id) +  " is NOT magnetically connected to the Solar Orbiter.")  
 
-        if os.path.isfile("connectivity_tool_downloads/SOLO_PARKER_PFSS_SCTIME_ADAPT_SCIENCE_" + closest_timestamp[0:4] + closest_timestamp[5:7] + closest_timestamp[8:13] + "0000_finallegendmag.png"):   
+        if os.path.isfile(f"{config.CACHE_DIR}/connectivity_tool_downloads/SOLO_PARKER_PFSS_SCTIME_ADAPT_SCIENCE_" + closest_timestamp[0:4] + closest_timestamp[5:7] + closest_timestamp[8:13] + "0000_finallegendmag.png"):   
             # Output of results
             if connected:
                 plots.plot(flare_id, closest_timestamp, [flare_lon, flare_lat], connected, p = [con_tool_data['CRLN'][con_id], con_tool_data['CRLT'][con_id]])
@@ -294,32 +291,32 @@ def find_connected_flares(stix_flares, flare_start_id, flare_end_id, delta, opt_
                 if plot_non_connected:
                     plots.plot(flare_id, closest_timestamp, [flare_lon, flare_lat], connected)
                 
-    plots.histogram(flare_distances, range(0, 180, 5), "Images/Hist/all_flares_distance.jpg")
-    plots.histogram(connected_flare_distances, np.arange(0, math.ceil(delta), 0.2), "Images/Hist/con_tool_flares_distance.jpg")
+    plots.histogram(flare_distances, range(0, 180, 5), f"{config.OUTPUT_DIR}/Images/Hist/all_flares_distance.jpg")
+    plots.histogram(connected_flare_distances, np.arange(0, math.ceil(delta), 0.2), f"{config.OUTPUT_DIR}/Images/Hist/con_tool_flares_distance.jpg")
     
     # 2-d plot
     if len(probability) != 0:
         plots.histogram_2d_density([item[2] for item in probability], [item[1] for item in probability],
-                                   [np.logspace(np.log10(min([item[2] for item in probability])), np.log10(max([item[2] for item in probability]))), np.arange(0, 105, 5)], "Images/Hist/2d_density")
+                                   [np.logspace(np.log10(min([item[2] for item in probability])), np.log10(max([item[2] for item in probability]))), np.arange(0, 105, 5)], f"{config.OUTPUT_DIR}/Images/Hist/2d_density")
 
     # 2-d plot all
     if len(probability_all) != 0:
         plots.histogram_2d_density([item[2] for item in probability_all], [item[1] for item in probability_all],
-                                   [np.logspace(np.log10(min([item[2] for item in probability_all])), np.log10(max([item[2] for item in probability_all]))), np.arange(0, 105, 5)], "Images/Hist/2d_density_all")
+                                   [np.logspace(np.log10(min([item[2] for item in probability_all])), np.log10(max([item[2] for item in probability_all]))), np.arange(0, 105, 5)], f"{config.OUTPUT_DIR}/Images/Hist/2d_density_all")
     
     # 2-d plot
     if len(probability_att) != 0:
         plots.histogram_2d_density([item[2] for item in probability_att], [item[1] for item in probability_att],
-                                   [np.logspace(np.log10(min([item[2] for item in probability_att])), np.log10(max([item[2] for item in probability_att]))), np.arange(0, 105, 5)], "Images/Hist/2d_density_att")
+                                   [np.logspace(np.log10(min([item[2] for item in probability_att])), np.log10(max([item[2] for item in probability_att]))), np.arange(0, 105, 5)], f"{config.OUTPUT_DIR}/Images/Hist/2d_density_att")
     
     # 2-d plot
     if len(probability_no_att) != 0:
         plots.histogram_2d_density([item[2] for item in probability_no_att], [item[1] for item in probability_no_att],
-                                   [np.logspace(np.log10(min([item[2] for item in probability_no_att])), np.log10(max([item[2] for item in probability_no_att]))), np.arange(0, 105, 5)], "Images/Hist/2d_density_no_att")
+                                   [np.logspace(np.log10(min([item[2] for item in probability_no_att])), np.log10(max([item[2] for item in probability_no_att]))), np.arange(0, 105, 5)], f"{config.OUTPUT_DIR}/Images/Hist/2d_density_no_att")
     
     # 2-d plot
     if len(probability_att_con) != 0:
         plots.histogram_2d_density([item[2] for item in probability_att_con], [item[1] for item in probability_att_con],
-                                   [np.logspace(np.log10(min([item[2] for item in probability_att_con])), np.log10(max([item[2] for item in probability_att_con]))), np.arange(0, 105, 5)], "Images/Hist/2d_density_att_con")
+                                   [np.logspace(np.log10(min([item[2] for item in probability_att_con])), np.log10(max([item[2] for item in probability_att_con]))), np.arange(0, 105, 5)], f"{config.OUTPUT_DIR}/Images/Hist/2d_density_att_con")
     
     return connected_flares, flare_distances

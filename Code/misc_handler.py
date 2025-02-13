@@ -17,6 +17,7 @@ from solarmach import SolarMACH, print_body_list, get_sw_speed
 import datetime
 import pandas as pd
 import numpy as np
+import config
 
 import epd_handler
 
@@ -91,7 +92,7 @@ def add_delay(particle_type, id, timestamp, indirect_factor, solo_dist):
     '''
     
     # load file with list of Parker Spiral distances at the time of each flare
-    dist = pd.read_pickle("SolarMACH/parker_spiral_distance.pkl")['Parker_Spiral_Distance'][id]
+    dist = pd.read_pickle(f"{config.CACHE_DIR}/SolarMACH/parker_spiral_distance.pkl")['Parker_Spiral_Distance'][id]
          
     n_bins = 0
     if particle_type == 'ion':

@@ -1,6 +1,7 @@
 import pandas as pd
 import datetime
 import math
+import config
 
 import misc_handler
 
@@ -8,7 +9,7 @@ def read_list():
     '''
     Reads csv flare list file and returns the contents as a database.
     '''
-    return pd.read_csv("flare_list/STIX_flarelist_w_locations_20210318_20240801_version1_pythom.csv")
+    return pd.read_csv(f"{config.CACHE_DIR}/flare_list/STIX_flarelist_w_locations_20210318_20240801_version1_pythom.csv")
  
 def closest_timestamp(peak_utc):
     '''

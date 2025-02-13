@@ -10,6 +10,7 @@ import plots
 import epd_handler
 import misc_handler
 import math
+import config
 
 dpi = 300
 mpl.rc("savefig", dpi = dpi)
@@ -26,8 +27,8 @@ show_all = False
 # work with data and search for events within the following timespan
 # -> do not simulate before and after 22.10.2021 in one run!!!
 # --> the change in energy bin ranges does not allow for an automated comparison of data before and after the change.
-start_date = '2024-05-20'
-end_date = '2024-05-31'
+start_date = config.START_DATE
+end_date = config.END_DATE
 
 # --------------------------------------- STIX ---------------------------------------
 
@@ -192,7 +193,7 @@ if flare_end_id != -1:
     for i in epd_connected_flares:
         epd_connected_flares_peak_utc.append(stix_flares['peak_UTC'][i])
 
-plots.plot_step_data(df_step_electron, running_mean, running_std, sigma_factor, offset, 'Images/step.jpg', connected_flares_utc,
+plots.plot_step_data(df_step_electron, running_mean, running_std, sigma_factor, offset, f'{config.OUTPUT_DIR}/Images/step.jpg', connected_flares_utc,
                      epd_connected_flares_peak_utc, events, stix_flares['peak_UTC'][flare_start_id:flare_end_id + 1])
 
 print(epd_connected_flares)

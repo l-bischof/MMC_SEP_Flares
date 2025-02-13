@@ -5,6 +5,7 @@ import requests
 from urllib.parse import urljoin
 import zipfile
 from io import BytesIO
+import config
 
 
 """
@@ -53,11 +54,11 @@ def download_files(start_date: datetime, end_date: datetime, download_all = Fals
 
     # Date should be inclusive
 
-    directory_to_extract_to = 'connectivity_tool_downloads'
+    directory_to_extract_to = f'{config.CACHE_DIR}/connectivity_tool_downloads'
 
     while start_date <= end_date:
         folder_name = start_date.strftime('SOLO_PARKER_PFSS_SCTIME_ADAPT_SCIENCE_%Y%m%dT%H0000')
-        path = 'connectivity_tool_downloads/' + folder_name + '_fileconnectivity.ascii'
+        path = f'{directory_to_extract_to}/' + folder_name + '_fileconnectivity.ascii'
         if not os.path.isfile(path) or download_all:
 
             zip_file = _download_set(start_date)

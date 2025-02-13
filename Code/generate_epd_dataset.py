@@ -5,6 +5,7 @@ import datetime
 
 import misc_handler
 import epd_handler
+import config
 
 '''
 Build own dataset of EPD data to reduce access time and memory usage.
@@ -18,7 +19,7 @@ Deletes automatically downloaded files with original data after data reduction i
     2.1 This may take a while
 '''
 
-dir_dest = 'EPD_Dataset/'
+dir_dest = f'{config.CACHE_DIR}/EPD_Dataset/'
 sensor = 'ept'
 
 # Downloads complete for 2021-01-01 to 2024-05-31

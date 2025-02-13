@@ -26,6 +26,8 @@ import plots
 import epd_handler
 import misc_handler
 
+import config
+
 # --------------------------------- Input parameters ---------------------------------
 
 # choose if additional output is requested
@@ -34,8 +36,8 @@ opt_output = False
 plot_non_connected = True
 
 # work with data and search for events within the following timespan
-start_date = '2024-05-20'
-end_date = '2024-05-31'
+start_date = config.START_DATE
+end_date = config.END_DATE
 
 # --------------------------------------- STIX ---------------------------------------
 
@@ -152,5 +154,5 @@ for col in running_mean.columns:
 running_mean.columns = col_names_mean
 running_std.columns = col_names_std
 
-plots.plot_epd_data(df, running_mean, running_std, sigma_factor, 'Images/Electron.jpg', connected_flares_peak_utc,
+plots.plot_epd_data(df, running_mean, running_std, sigma_factor, f'{config.OUTPUT_DIR}/Images/Electron.jpg', connected_flares_peak_utc,
                     epd_connected_flares_peak_utc, events, stix_flares['peak_UTC'][flare_start_id:flare_end_id + 1])

@@ -1,34 +1,10 @@
-Code/Images
-Code/Example_images
-Code/old_scripts
-Code/test
-Code/Team_Japan
-
-Code/EPD_Dataset/step/*
-Code/EPD_Dataset/ept/sun/electron/*
-Code/EPD_Dataset/ept/asun/electron/*
-Code/EPD_Dataset/ept/south/electron/*
-Code/EPD_Dataset/ept/north/electron/*
-Code/EPD_Dataset/ept/omni/electron/*
-Code/EPD_Dataset/ept/sun/ion
-Code/EPD_Dataset/ept/asun/ion
-Code/EPD_Dataset/ept/south/ion
-Code/EPD_Dataset/ept/north/ion
-Code/EPD_Dataset/ept/omni/ion
-
-Code/l2/epd/ept/*
-Code/l2/epd/step/*
-
-Code/connectivity_tool_downloads/*
+Cache/connectivity_tool_downloads/
 
 Code/*.txt
 Code/*.xslx
+Code/l2
 
-Code/search_AR.py
-Code/check_overlap.py
-Code/histograms.py
-Code/overlap.py
-Code/con_flares_full.py
+Data/
 
 Code/flare_list/adjust_idx.py
 EPD_Dataset/
