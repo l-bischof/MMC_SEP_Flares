@@ -80,16 +80,16 @@ def plot_epd_data(df, df_mean, df_std, sigma_factor, filename = f"{config.OUTPUT
     first_EPD = True
     first_flare = True
     
-    #'''
+    '''
     # used to plot only fraction of data
     df = df['2022-01-14 12:00:00':'2022-01-15 00:00:00']
     df_mean = df_mean['2022-01-14 12:00:00':'2022-01-15 00:00:00']
     df_std = df_std['2022-01-14 12:00:00':'2022-01-15 00:00:00']
-    #'''
+    '''
     
     plt.clf()
     
-    plt.rcParams["figure.figsize"] = (10, 9)
+    plt.rcParams["figure.figsize"] = (20, 9)
     
     fig, axs = plt.subplots(4, sharex = False)
     plt.subplots_adjust(hspace = 0)

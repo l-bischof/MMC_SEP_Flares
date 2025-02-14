@@ -2,7 +2,7 @@ Cache/connectivity_tool_downloads/
 Cache/_solo
 
 Code/*.txt
-Code/*.xslx
+Code/*.ipynb
 Code/l2
 
 Data/
