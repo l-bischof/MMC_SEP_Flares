@@ -14,15 +14,16 @@ This project contains the code used for this project and should allow its user t
    
 2. Generate the required datasets with *generate_epd_dataset.py* and *generate_solar_mach_dataset.py*.
    
-    a. In *generate_epd_dataset.py* set start and end date* to only generate the dataset for the required time period.
+    a. In *generate_epd_dataset.py* set start and end date[^1] to only generate the dataset for the required time period.
    
     b. Depending on the time period that is wished to be examined, this might take quite a bit of memory space. Hence the upload of the full datasets is omitted.
 
-3. a) Run the script for the STEP sensor *step_comparison.py* after setting the start and end date correctly*.
+3. a) Run the script for the STEP sensor *step_comparison.py*[^2] after setting the start and end date correctly[^1].
 
-3. b) Run the script for the EPT sensor *ept_comparison.py* after setting the start and end date correctly* and choosing the wished viewing angle.
+   b) Run the script for the EPT sensor *ept_comparison.py* after setting the start and end date correctly[^1] and choosing the wished viewing angle.
 
-\* write the date in the yyyy-mm-dd format
+[^1]: write the date in the yyyy-mm-dd format
+[^2]: do not simulate periods before and after 22.10.2021 in one run! (Changes in the datasets of EPD/STEP do not allow for a direct comparison of data before and after this date.)
 
 ## References:
 
