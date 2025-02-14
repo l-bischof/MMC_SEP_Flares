@@ -108,14 +108,6 @@ while date != misc.next_date(end_date) and sensor == 'ept':
     df_ion_omni.to_pickle(dest_ion)
     df_electron_omni.to_pickle(dest_electron)
     
-    # delete downloaded files to free up memory space
-    # depending on timeframe files end with: '_V01.cdf', '_V02.cdf' or '_V03.cdf'
-    for viewing in ['sun', 'asun', 'south', 'north']:
-        for i in ['1', '2', '3']:
-            path = "l2/epd/" + sensor + "/solo_L2_epd-" + sensor + "-" + viewing + "-rates_" + date[0:4] + date[5:7] + date[8:10] + "_V0" + i + ".cdf"
-            if os.path.isfile(path):
-                os.remove(path)
-    
     # get next date
     date = misc.next_date(date)   
     
