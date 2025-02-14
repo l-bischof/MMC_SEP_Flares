@@ -178,8 +178,8 @@ def find_connected_flares(stix_flares, flare_start_id, flare_end_id, delta, opt_
 
     # cycle through specified range of flares [start, end]
     for flare_id in range(flare_start_id, flare_end_id + 1):
-        
-        print('MCT progress:    ' + str(math.floor((flare_id - flare_start_id) / (flare_end_id - flare_start_id) * 10000) / 100) + ' %')
+        if (flare_end_id - flare_start_id) != 0:
+            print('MCT progress:    ' + str(math.floor((flare_id - flare_start_id) / (flare_end_id - flare_start_id) * 10000) / 100) + ' %')
         
         # get coordinates of flare
         flare_lon = stix_flares['hgc_lon'][flare_id]
