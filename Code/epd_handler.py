@@ -69,7 +69,7 @@ def reduce_data(df, sensor = 'ept'):
     
     start_index = df.index[0]
     
-    max_allowed_value = pd.Timestamp(df.index[0].date() + datetime.timedelta(days=1))
+    max_allowed_value = pd.Timestamp(df.index[0].date() + datetime.timedelta(days=1)).replace(second=1)
     # loop through every index of given dataframe, this ensures to include all data that is given to be copied to reduced data
     for i in df.index:
         if i > max_allowed_value:
