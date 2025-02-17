@@ -77,6 +77,7 @@ def reduce_data(df, sensor = 'ept'):
             print("Skipping Datapoint: Wrong day", i, max_allowed_value, df.index.get_loc(i))
             break
         next_timestamp = i.replace(microsecond = 0) # round to seconds (always round down)
+        next_timestamp = next_timestamp.floor(freq="s")
         
         # if one second is skipped due to instrument delay, adjust time
         if (next_timestamp == time + datetime.timedelta(0, 1)):
