@@ -1,4 +1,5 @@
-from epd_handler import reduce_data
+from epd.data_helper import reduce_data
+from epd_handler import reduce_data as old_reduce_data
 import pandas as pd
 import unittest
 
@@ -15,6 +16,14 @@ class TestEPD(unittest.TestCase):
         # There should be no NaN's -> Off by one error
         nans = df1[df1.isna().sum(axis=1) > 5]
         self.assertEqual(len(nans), 0)
+    
+    def test_missing_data(self):
+        df = pd.read_pickle("./Code/tests/data/fix-2021-04-19.pkl")
+        df = df[df.index < df.index[0].replace(hour=6)]
+        df1 = reduce_data(df, "ept")
+        nans1 = df1[df1.isna().sum(axis=1) > 5]
+        self.assertEqual(len(df1), 288)
+        self.assertEqual(len(nans1), 216)
 
 
 if __name__ == "__main__":
