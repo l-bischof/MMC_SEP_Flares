@@ -43,7 +43,7 @@ def step_delay(date, length):
     dist = parker_spiral_distance(datetime.datetime.strptime(date[2:10] + " 00:00:00", "%y-%m-%d %H:%M:%S"))
 
     c = 299792458 # [m/s] speed of light
-    m = 9.1093837015e-31
+    m = 9.1093837015e-31 # Mass electron
         
     KE = np.empty(length)
 
