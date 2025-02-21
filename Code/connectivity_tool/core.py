@@ -33,13 +33,13 @@ def read_data(utc):
         download_files(start_date, start_date+timedelta(hours=6)) # as only next file is needed in this case
         
     # generate empty dataframe with columns: [i, density(%), R(m), CRLT(degrees), CRLN(degrees), DIST(m), HPLT(degrees), HPLN(degrees)]
-    df = pd.DataFrame({"SSW/FSW/M" : pd.Series(dtype = 'string'),
-                       "density" : pd.Series(dtype = 'float'),
-                       "R" : pd.Series(dtype = 'float'),
-                       "CRLT" : pd.Series(dtype = 'float'),
-                       "CRLN" : pd.Series(dtype = 'float'),
-                       "DIST" : pd.Series(dtype = 'float'),
-                       "HPLT" : pd.Series(dtype = 'float'),
+    df = pd.DataFrame({"SSW/FSW/M" : pd.Series(dtype = 'string'), # Mesurement / Slow / Fast
+                       "density" : pd.Series(dtype = 'float'),  # Probability
+                       "R" : pd.Series(dtype = 'float'),        # Distance of Sun (~700'000)
+                       "CRLT" : pd.Series(dtype = 'float'),     # Carrington Latitude
+                       "CRLN" : pd.Series(dtype = 'float'),     # Carrington Longitude
+                       "DIST" : pd.Series(dtype = 'float'),     # S/C distance
+                       "HPLT" : pd.Series(dtype = 'float'),     
                        "HPLN" : pd.Series(dtype = 'float')})
     
     if not os.path.isfile(filename):
@@ -66,62 +66,6 @@ def read_data(utc):
 
     return df
 
-'''
-Obsolete function!
-Kept to show the idea of grouping possible connection points
-
-def separation(data, epsilon):
-    #''
-    Separate possible connection points into groups with at most epsilon degrees of distance between each other
-    
-    parameters:
-    data:       pandas dataframe with information on flares
-    epsilon:    value (in degrees) of distance for separation
-    #''
-    groups = []
-    temp = 0
-    
-    for type in data['SSW/FSW/M'].unique():
-        # split data according to type
-        data_type = data[data['SSW/FSW/M'] == type]
-        
-        to_add = list(range(temp, temp + len(data_type.index)))
-        temp += len(data_type.index)
-        
-        new_group = []
-        
-        while(len(to_add) != 0):
-            for i in to_add:
-                new_element_added = False
-                # First element of the group has to be in a new group
-                if(len(new_group) == 0):
-                    new_group = [i]
-                    to_add.remove(i)
-                else:
-                    for j in new_group:
-                        # account for wrap around cases
-                        lon_dist = min(abs(data_type['CRLN'][j] - data_type['CRLN'][i]), abs(data_type['CRLN'][j] - data_type['CRLN'][i] + 360), abs(data_type['CRLN'][j] - data_type['CRLN'][i] - 360))
-                        
-                        if (lon_dist ** 2 + (data_type['CRLT'][j] - data_type['CRLT'][i]) ** 2 - epsilon ** 2 <= 0):
-                            new_group.append(i)
-                            to_add.remove(i)
-                            new_element_added = True
-                            break
-                if (new_element_added):
-                    break
-            if (new_element_added):
-                continue
-            
-            # append group when every element is checked with current group
-            groups.append(new_group)
-            new_group = []
-        
-        # add last group when every element is added 
-        if len(new_group) != 0:
-            groups.append(new_group)
-            
-    return groups
-'''
 
 def find_center(groups, data):
     '''
@@ -188,9 +132,11 @@ def find_connected_flares(stix_flares, flare_start_id, flare_end_id, delta, opt_
         # compute estimated GOES flux & class
         counts = stix_flares['4-10 keV'][flare_id] - stix_flares['bkg 4-10 keV'][flare_id]
         
+        # S/C distance
         dist = stix_flares['solo_position_AU_distance'][flare_id]
         scale = dist**2
         
+        # STIX list combines 4s -> Goes flux is per second
         goes_flux = compute_goes_flux(counts * scale / 4) # STIX list has counts over 4s in it
         
         if not stix_flares['att_in'][flare_id]:
