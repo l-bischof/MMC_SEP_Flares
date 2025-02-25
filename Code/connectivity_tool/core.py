@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 import functools
 
 import config
-import stix_handler
+import stix
 import plots
 from .goes import compute_goes_flux, get_goes_classification
 
@@ -164,7 +164,7 @@ def find_connected_flares(stix_flares, flare_start_id, flare_end_id, delta, opt_
 
         # get the closest timestamp that correlates to the times where the connectivity tool computes its data
         # [00:00, 06:00, 12:00, 18:00] in utc format respectively
-        closest_timestamp = stix_handler.closest_timestamp(stix_flares['peak_UTC'][flare_id])
+        closest_timestamp = stix.closest_timestamp(stix_flares['peak_UTC'][flare_id])
 
         # get connectivity tool data from downloaded files
         con_tool_data = read_data(closest_timestamp)

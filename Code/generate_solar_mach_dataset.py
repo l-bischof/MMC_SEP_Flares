@@ -1,11 +1,11 @@
 import pandas as pd
 
-import stix_handler
+import stix
 import misc
 import config
 
 # read STIX flare list and extract coordinates of the origin
-stix_flares = stix_handler.read_list()
+stix_flares = stix.read_list()
 
 df = pd.DataFrame(index = range(len(stix_flares)), columns = ['Parker_Spiral_Distance'])
 

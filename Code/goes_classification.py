@@ -7,7 +7,7 @@ import numpy as np
 import os
 import config
 
-import stix_handler
+import stix
 import plots
 
 # set resolution of plot
@@ -15,7 +15,7 @@ dpi = 300
 mpl.rc("savefig", dpi = dpi)
 
 # read STIX flare list and extract coordinates of the origin
-stix_flares = stix_handler.read_list()
+stix_flares = stix.read_list()
 
 def compute_goes_flux(scaled_counts):
     '''

@@ -20,10 +20,12 @@ import pandas as pd
 import numpy as np
 import datetime
 
-import stix_handler
+import epd.data_helper
+import epd.loader
+import stix
 import connectivity_tool
 import plots
-import epd_handler
+import epd
 import misc
 
 import config
@@ -44,10 +46,10 @@ end_date = config.END_DATE
 delta = 10      # radius of connection points that get accepted (degrees)
 
 # read STIX flare list and extract coordinates of the origin
-stix_flares = stix_handler.read_list()
+stix_flares = stix.read_list()
 
 # get range of flares that are within the defined timeframe
-flare_start_id, flare_end_id = stix_handler.flares_range(start_date, end_date, stix_flares['peak_UTC'])
+flare_start_id, flare_end_id = stix.flares_range(start_date, end_date, stix_flares['peak_UTC'])
 
 # returns a list of candidates the MCT (Magnetic Connectivity Tool) expects the Solar Orbiter to be connected with
 # flare_distances is currently not used for anything (has been added as it might yield interesting data)
@@ -70,18 +72,18 @@ viewing = 'sun' # ['sun', 'asun', 'north', 'south', 'omni']
 
 # load data from compressed EPD dataset
 # epd_handler.load_pickles() loads dataframe of timespan defined (including end_date)
-df = epd_handler.load_pickles(sensor, start_date, end_date, 'electron', viewing)
+df = epd.loader.load_pickles(sensor, start_date, end_date, 'electron', viewing)
 
 print("Pickle files loaded...")
 
 # compute running averade and standard deviation
-running_mean, running_std = epd_handler.running_average(df)
+running_mean, running_std = epd.data_helper.running_average(df)
 
 print("Running averages computed...")
 
 # try to find events in data
 sigma_factor = 2.5
-events = epd_handler.find_event(df, running_mean, running_std, sigma_factor)
+events = epd.data_helper.find_event(df, running_mean, running_std, sigma_factor)
 
 print("Events found...")
 
@@ -98,8 +100,10 @@ if flare_end_id != -1:
         utc = stix_flares['peak_UTC'][i]
         timestamp = pd.Timestamp(utc[0:10] + " " + utc[11:19])
         
+        # Timestamp of the flare peak
         delayed_utc.append(misc.add_delay('electron', i, timestamp, indirect_factor, stix_flares['solo_position_AU_distance'][i]))
         
+        # Timestamp of the flare start
         utc_start = stix_flares['start_UTC'][i]
         timestamp = pd.Timestamp(utc_start[0:10] + " " + utc_start[11:19])
         
