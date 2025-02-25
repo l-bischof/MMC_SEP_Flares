@@ -4,7 +4,7 @@ import numpy as np
 import datetime
 
 import misc
-import epd_handler
+import epd
 import config
 
 '''
@@ -58,7 +58,7 @@ while date != misc.next_date(end_date) and sensor == 'ept':
     df_electron_omni = pd.DataFrame()
     
     for viewing in ['sun', 'asun', 'south', 'north']:
-        df_ions_alpha, df_electrons, energies = epd_handler.load_data(sensor, date, date, viewing)
+        df_ions_alpha, df_electrons, energies = epd.load_data(sensor, date, date, viewing)
         
         # check if there is no data available -> empty dataframe (nan)
         if len(df_ions_alpha) == 0:
@@ -73,8 +73,8 @@ while date != misc.next_date(end_date) and sensor == 'ept':
             df_electron = df_electrons['Electron_Flux']
 
         # combine data to 5min intervals and fill missing data with nan
-        df_ion_red = epd_handler.reduce_data(df_ion)
-        df_electron_red = epd_handler.reduce_data(df_electron)
+        df_ion_red = epd.reduce_data(df_ion)
+        df_electron_red = epd.reduce_data(df_electron)
         
         # define location to save files
         os.makedirs(dir_dest + sensor + '/' + viewing + '/ion/', exist_ok=True)
@@ -114,7 +114,7 @@ while date != misc.next_date(end_date) and sensor == 'ept':
 while date != misc.next_date(end_date) and sensor == 'step':
     print('Currently working on files of: ' + date)
     
-    df_step, energies = epd_handler.load_data(sensor, date, date)
+    df_step, energies = epd.load_data(sensor, date, date)
     
     # check if there is no data available -> empty dataframe (nan)
     if len(df_step) == 0:
@@ -148,7 +148,7 @@ while date != misc.next_date(end_date) and sensor == 'step':
     # then save the reduced data to a pickle file
     directory = dir_dest + sensor + '/'
     os.makedirs(directory, exist_ok=True)
-    epd_handler.reduce_data(df_step, sensor).to_pickle(directory + date + '.pkl')
+    epd.reduce_data(df_step, sensor).to_pickle(directory + date + '.pkl')
     
     # get next date
     date = misc.next_date(date)

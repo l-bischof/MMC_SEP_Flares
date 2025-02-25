@@ -4,8 +4,6 @@ import datetime
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-import epd.data_helper
-import epd.loader
 import stix
 import connectivity_tool
 import plots
@@ -57,7 +55,7 @@ sensor = 'step' # ['het', 'ept', 'step']
 
 # columns of step data
 # ['DELTA_EPOCH', 'Integral_Avg_Flux_0-47', 'Integral_Avg_Uncertainty_0-47', 'Magnet_Avg_Flux_0-47', 'Magnet_Avg_Uncertainty_0-47', 'QUALITY_BITMASK', 'QUALITY_FLAG', 'SMALL_PIXELS_FLAG']
-df_step = epd.loader.load_pickles(sensor, start_date, end_date)
+df_step = epd.load_pickles(sensor, start_date, end_date)
 
 # remove flag columns as currently not used
 drop_columns = ['DELTA_EPOCH', 'QUALITY_BITMASK', 'QUALITY_FLAG']
@@ -93,7 +91,7 @@ for i in range(length):
     df_step_electron[electron_cols[i]] = pd.Series(df_integral[integral_col].to_numpy() - df_magnet[magnet_col].to_numpy(), index = df_step_electron.index)  
 
 # compute running averade and standard deviation
-running_mean, running_std = epd.data_helper.running_average(df_step_electron)
+running_mean, running_std = epd.running_average(df_step_electron)
 
 print("Running averages computed...")
 
@@ -126,7 +124,7 @@ for i in df_offset_step.columns:
 
 # try to find events in data
 sigma_factor = 3.5
-events = epd.data_helper.find_event(df_offset_step, running_mean, running_std, sigma_factor)
+events = epd.find_event(df_offset_step, running_mean, running_std, sigma_factor)
 
 print("Events found...")
 

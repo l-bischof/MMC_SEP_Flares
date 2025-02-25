@@ -20,8 +20,6 @@ import pandas as pd
 import numpy as np
 import datetime
 
-import epd.data_helper
-import epd.loader
 import stix
 import connectivity_tool
 import plots
@@ -72,18 +70,18 @@ viewing = 'sun' # ['sun', 'asun', 'north', 'south', 'omni']
 
 # load data from compressed EPD dataset
 # epd_handler.load_pickles() loads dataframe of timespan defined (including end_date)
-df = epd.loader.load_pickles(sensor, start_date, end_date, 'electron', viewing)
+df = epd.load_pickles(sensor, start_date, end_date, 'electron', viewing)
 
 print("Pickle files loaded...")
 
 # compute running averade and standard deviation
-running_mean, running_std = epd.data_helper.running_average(df)
+running_mean, running_std = epd.running_average(df)
 
 print("Running averages computed...")
 
 # try to find events in data
 sigma_factor = 2.5
-events = epd.data_helper.find_event(df, running_mean, running_std, sigma_factor)
+events = epd.find_event(df, running_mean, running_std, sigma_factor)
 
 print("Events found...")
 
