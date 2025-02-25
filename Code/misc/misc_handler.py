@@ -16,8 +16,7 @@ import math
 import datetime
 import pandas as pd
 import config
-
-import epd_handler
+import numpy as np
 
 def get_epd_bins(type):
     '''
@@ -69,7 +68,7 @@ def add_delay(particle_type, id, timestamp, indirect_factor, solo_dist):
     if particle_type == 'electron':
         n_bins = 34
         
-    v = epd_handler.compute_particle_speed(n_bins, particle_type)
+    v = compute_particle_speed(n_bins, particle_type)
     
     delayed_timestamp = []
     for i in range(n_bins):
@@ -81,10 +80,43 @@ def add_delay(particle_type, id, timestamp, indirect_factor, solo_dist):
     
     return delayed_timestamp
 
-
     
 def intersection(lst1, lst2):
     lst3 = [value for value in lst1 if value in lst2]
     return lst3
 
 
+def bin_upper_energy_limit(bin, type):
+    '''
+    returns upper energy limit of chosen bin
+    
+    parameters:
+    bin:    int of energy bin that we look at
+    type:   string of particle type [ion, electron]
+    '''
+    return float(get_epd_bins(type)[bin][0][9:15])
+    
+
+def compute_particle_speed(n_bins, particle_type):
+    '''
+    Compute the relativistic speed of the fastest particles that are measured in the corresponding bin using E = 1/2 * m * v**2
+    
+    Parameters:
+    bin = number of bin of which the particle speed should be returned
+    particle_type = ['ion', 'electron']
+    '''
+    m = 0
+    c = 299792458 # [m/s] speed of light
+    if particle_type == 'ion':
+        # mass of proton
+        m = 1.67262192e-27
+    if particle_type == 'electron':
+        # mass of electron
+        m = 9.1093837015e-31
+        
+    KE = np.empty(n_bins)
+    
+    for i in range(n_bins):
+        KE[i] = bin_upper_energy_limit(i, particle_type) * 1.60218e-13 # get energy from bins in [MeV] and convert to Joules [J]
+    
+    return np.sqrt(1 - (1 / (KE / (m * c**2) + 1)**2)) * c  # relativistic formula for kinetic energy
