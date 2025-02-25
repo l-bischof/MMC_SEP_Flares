@@ -1,5 +1,4 @@
 from epd.data_helper import reduce_data
-from epd_handler import reduce_data as old_reduce_data
 import pandas as pd
 import unittest
 
