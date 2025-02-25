@@ -11,13 +11,14 @@ import os
 import math
 import numpy as np
 from datetime import datetime, timedelta
+import functools
 
 import config
 import stix_handler
 import plots
 from .goes import compute_goes_flux, get_goes_classification
 
-
+@functools.cache
 def read_data(utc):
     '''
     reads data from connectivity tool database
@@ -30,7 +31,10 @@ def read_data(utc):
     
     if not os.path.isfile(filename):
         start_date = datetime.fromisoformat(utc)
-        download_files(start_date, start_date+timedelta(hours=6)) # as only next file is needed in this case
+        try:
+            download_files(start_date, start_date+timedelta(hours=6)) # as only next file is needed in this case
+        except Exception as e:
+            print(f"Download of {timestamp} failed:", repr(e))
         
     # generate empty dataframe with columns: [i, density(%), R(m), CRLT(degrees), CRLN(degrees), DIST(m), HPLT(degrees), HPLN(degrees)]
     df = pd.DataFrame({"SSW/FSW/M" : pd.Series(dtype = 'string'), # Mesurement / Slow / Fast
@@ -44,27 +48,37 @@ def read_data(utc):
     
     if not os.path.isfile(filename):
         return df
-        
-    raw_data = open(filename, 'r')
     
-    i = 1
-    for line in raw_data:
-        if (i >= 21):
-            line = line.strip()
-            columns = line.split()
-            new_row = pd.DataFrame({"SSW/FSW/M" : [str(columns[0])],
-                                    "density" : [float(columns[2])],
-                                    "R" : [float(columns[3])],
-                                    "CRLT" : [float(columns[4])],
-                                    "CRLN" : [float(columns[5])],
-                                    "DIST" : [float(columns[6])],
-                                    "HPLT" : [float(columns[7])],
-                                    "HPLN" : [float(columns[8])]})
-            
-            df = pd.concat([df, new_row], ignore_index = True)
-        i += 1
 
-    return df
+    with open(filename, 'r') as connectivity_file:
+        raw_data = connectivity_file.readlines()
+    
+
+    data = {
+        "SSW/FSW/M" : [],
+        "density" : [],
+        "R" : [],
+        "CRLT" : [],
+        "CRLN" : [],
+        "DIST" : [],
+        "HPLT" : [],
+        "HPLN" : []
+    }
+
+    for line in raw_data[20:]:
+        line = line.strip()
+        columns = line.split()
+
+        data["SSW/FSW/M"].append(str(columns[0]))
+        data["density"].append(float(columns[2]))
+        data["R"].append(float(columns[3]))
+        data["CRLT"].append(float(columns[4]))
+        data["CRLN"].append(float(columns[5]))
+        data["DIST"].append(float(columns[6]))
+        data["HPLT"].append(float(columns[7]))
+        data["HPLN"].append(float(columns[8]))
+
+    return pd.DataFrame(data=data)
 
 
 def find_center(groups, data):
