@@ -1,8 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
-from collections import Counter
-import pandas as pd
 import os
 from datetime import timedelta
 import config
@@ -213,9 +211,9 @@ def plot_step_data(df, df_mean, df_std, sigma_factor, offset, filename = f"{conf
     first_con = True
     first_EPD = True
     first_flare = True
-    panels = 4
+    panels = 4 # How many rows our graphic gets
     
-    step_long = False
+    step_long = False # checking if we have a long step Dataframe
     
     if len(df.columns) > 40:
         step_long = True
@@ -239,7 +237,8 @@ def plot_step_data(df, df_mean, df_std, sigma_factor, offset, filename = f"{conf
         offset = [0, offset[0], offset[15], offset[31], offset[47]]
     else:
         offset = [0, offset[0], offset[15], offset[31]]
-        
+    
+    # Selecting and renaming the columns
     if (step_long):
         df_temp = df[['Electron_Avg_Flux_0', 'Electron_Avg_Flux_0', 'Electron_Avg_Flux_15', 'Electron_Avg_Flux_31', 'Electron_Avg_Flux_47']]
         df_temp.columns = ['_Flare', 'STEP Channel 0', 'STEP Channel 15', 'STEP Channel 31', 'STEP Channel 47']
@@ -253,9 +252,11 @@ def plot_step_data(df, df_mean, df_std, sigma_factor, offset, filename = f"{conf
 
     df_temp[['_Flare']].plot(color = '#000000', ax = axs[0])
     
+    # Plotting the step data
     for i in range(panels - 1):
         df_temp[['STEP Channel ' + cols[i]]].plot(logy = True, color = '#000000', ax = axs[i + 1])
-        
+    
+    # overwriting df_temp with std
     if (step_long):
         df_temp = df_std[['Mean+' + str(sigma_factor) + 'Sigma_Flux_0', 'Mean+' + str(sigma_factor) + 'Sigma_Flux_15', 'Mean+' + str(sigma_factor) + 'Sigma_Flux_31', 'Mean+' + str(sigma_factor) + 'Sigma_Flux_47']]
         df_temp.columns = ['Mean + ' + str(sigma_factor) + r"$\sigma$" + ' (Channel 0) ' + str(energies_48[0]),
@@ -312,11 +313,12 @@ def plot_step_data(df, df_mean, df_std, sigma_factor, offset, filename = f"{conf
     # plotting the timespans where we detect an event in the epd data
     for i in events_epd_utc:
         for j in range(1, panels):
+            bin_offset = int(offset[j]) * config.TIME_RESOLUTION
             if first_EPD and j == 0:
-                axs[j].axvspan(i[0] + timedelta(0, offset[j] * 300), i[1] + timedelta(0, offset[j] * 300), color = 'b', alpha = 0.2, label = 'electron event')
+                axs[j].axvspan(i[0] + timedelta(0, bin_offset), i[1] + timedelta(0, bin_offset), color = 'b', alpha = 0.2, label = 'electron event')
                 first_EPD = False
             else:
-                axs[j].axvspan(i[0] + timedelta(0, offset[j] * 300), i[1] + timedelta(0, offset[j] * 300), color = 'b', alpha = 0.2)
+                axs[j].axvspan(i[0] + timedelta(0, bin_offset), i[1] + timedelta(0, bin_offset), color = 'b', alpha = 0.2)
     
     axs[0].xaxis.tick_top()
     
