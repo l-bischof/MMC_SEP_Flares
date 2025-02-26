@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
-import os
-from datetime import timedelta
-import config
+from collections import Counter
+import pandas as pd
+import datetime
 
-import misc
+import misc_handler
 
 # set resolution of plot
 dpi = 300
@@ -38,7 +38,7 @@ def plot(flare_id, utc, flare_loc, plot_p, p = [-1, 0]):
     p = scale_point(p)
     flare_loc = scale_point(flare_loc)
     
-    img = plt.imread(f"{config.CACHE_DIR}/connectivity_tool_downloads/SOLO_PARKER_PFSS_SCTIME_ADAPT_SCIENCE_" + timestamp + "_finallegendmag.png")
+    img = plt.imread("connectivity_tool_downloads/SOLO_PARKER_PFSS_SCTIME_ADAPT_SCIENCE_" + timestamp + "_finallegendmag.png")
     plt.imshow(img)
     plt.axis('off')
     plt.plot(flare_loc[0], flare_loc[1], "oc", markersize = 3, label = 'Flare origin')  # og:shorthand for green circle
@@ -48,23 +48,17 @@ def plot(flare_id, utc, flare_loc, plot_p, p = [-1, 0]):
         plt.plot(p[0], p[1], "r^", markersize = 3, label = 'Closest potential connection point')
     
     plt.legend(prop = {'size': 3})
-    
-    os.makedirs(f"{config.OUTPUT_DIR}/Images/flare_connections/", exist_ok=True)
-    fig.savefig(f"{config.OUTPUT_DIR}/Images/flare_connections/con_point_" + str(flare_id) + ".jpg", bbox_inches = 'tight')
+        
+    fig.savefig("Images/flare_connections/con_point_" + str(flare_id) + ".jpg", bbox_inches = 'tight')
     
     plt.close()
     
     return
 
-def plot_epd_data(df, df_mean, df_std, sigma_factor, filename = f"{config.OUTPUT_DIR}/Images/epd_data.jpg", connected_flares_peak_utc = [], epd_connected_flares_peak_utc = [], events_epd_utc = [], all_flare_utc = []):
+def plot_epd_data(df, df_mean, df_std, sigma_factor, filename = "Images/epd_data.jpg", connected_flares_peak_utc = [], epd_connected_flares_peak_utc = [], events_epd_utc = [], all_flare_utc = []):
     '''
     plots epd data from pandas dataframe
     '''
-
-    connected_flares_peak_utc = misc.parse_date_list(connected_flares_peak_utc)
-    epd_connected_flares_peak_utc = misc.parse_date_list(epd_connected_flares_peak_utc)
-    all_flare_utc = misc.parse_date_list(all_flare_utc)
-
     energies = [['0.0312 - 0.0354 MeV'], ['0.0334 - 0.0374 MeV'], ['0.0356 - 0.0396 MeV'], ['0.0382 - 0.0420 MeV'], ['0.0408 - 0.0439 MeV'], ['0.0439 - 0.0467 MeV'], ['0.0467 - 0.0505 MeV'],
                 ['0.0505 - 0.0542 MeV'], ['0.0542 - 0.0588 MeV'], ['0.0588 - 0.0635 MeV'], ['0.0635 - 0.0682 MeV'], ['0.0682 - 0.0739 MeV'], ['0.0739 - 0.0798 MeV'], ['0.0798 - 0.0866 MeV'],
                 ['0.0866 - 0.0942 MeV'], ['0.0942 - 0.1021 MeV'], ['0.1021 - 0.1107 MeV'], ['0.1107 - 0.1207 MeV'], ['0.1207 - 0.1314 MeV'], ['0.1314 - 0.1432 MeV'], ['0.1432 - 0.1552 MeV'],
@@ -77,9 +71,16 @@ def plot_epd_data(df, df_mean, df_std, sigma_factor, filename = f"{config.OUTPUT
     first_EPD = True
     first_flare = True
     
+    #'''
+    # used to plot only fraction of data
+    df = df['2022-01-14 12:00:00':'2022-01-15 00:00:00']
+    df_mean = df_mean['2022-01-14 12:00:00':'2022-01-15 00:00:00']
+    df_std = df_std['2022-01-14 12:00:00':'2022-01-15 00:00:00']
+    #'''
+    
     plt.clf()
     
-    plt.rcParams["figure.figsize"] = (20, 9)
+    plt.rcParams["figure.figsize"] = (10, 9)
     
     fig, axs = plt.subplots(4, sharex = False)
     plt.subplots_adjust(hspace = 0)
@@ -134,7 +135,7 @@ def plot_epd_data(df, df_mean, df_std, sigma_factor, filename = f"{config.OUTPUT
             else:
                 axs[j + 1].axvline(flare_utc, color = 'b')
         
-    for i in misc.intersection(epd_connected_flares_peak_utc, connected_flares_peak_utc):
+    for i in misc_handler.intersection(epd_connected_flares_peak_utc, connected_flares_peak_utc):
         for j in range(3):
             if first_con and j == 2:
                 axs[j + 1].axvline(i, color = 'r', label = 'connected flare-electron event')
@@ -159,7 +160,6 @@ def plot_epd_data(df, df_mean, df_std, sigma_factor, filename = f"{config.OUTPUT
             axs[i].set_ylim(axs[i].get_ylim()[0], None)
             
     axs[0].xaxis.tick_top()
-    axs[0].set_xlim(*axs[3].get_xlim())
     axs[1].get_xaxis().set_visible(False)
     axs[2].get_xaxis().set_visible(False)
     
@@ -178,7 +178,7 @@ def plot_epd_data(df, df_mean, df_std, sigma_factor, filename = f"{config.OUTPUT
     
     return
 
-def plot_step_data(df, df_mean, df_std, sigma_factor, offset, filename = f"{config.OUTPUT_DIR}/Images/epd_data.jpg", connected_flares_peak_utc = [], epd_connected_flares_peak_utc = [], events_epd_utc = [], all_flare_utc = []):
+def plot_step_data(df, df_mean, df_std, sigma_factor, offset, filename = "Images/epd_data.jpg", connected_flares_peak_utc = [], epd_connected_flares_peak_utc = [], events_epd_utc = [], all_flare_utc = []):
     '''
     plots epd data from pandas dataframe
     
@@ -203,9 +203,9 @@ def plot_step_data(df, df_mean, df_std, sigma_factor, offset, filename = f"{conf
     first_con = True
     first_EPD = True
     first_flare = True
-    panels = 4 # How many rows our graphic gets
+    panels = 4
     
-    step_long = False # checking if we have a long step Dataframe
+    step_long = False
     
     if len(df.columns) > 40:
         step_long = True
@@ -229,8 +229,7 @@ def plot_step_data(df, df_mean, df_std, sigma_factor, offset, filename = f"{conf
         offset = [0, offset[0], offset[15], offset[31], offset[47]]
     else:
         offset = [0, offset[0], offset[15], offset[31]]
-    
-    # Selecting and renaming the columns
+        
     if (step_long):
         df_temp = df[['Electron_Avg_Flux_0', 'Electron_Avg_Flux_0', 'Electron_Avg_Flux_15', 'Electron_Avg_Flux_31', 'Electron_Avg_Flux_47']]
         df_temp.columns = ['_Flare', 'STEP Channel 0', 'STEP Channel 15', 'STEP Channel 31', 'STEP Channel 47']
@@ -244,11 +243,9 @@ def plot_step_data(df, df_mean, df_std, sigma_factor, offset, filename = f"{conf
 
     df_temp[['_Flare']].plot(color = '#000000', ax = axs[0])
     
-    # Plotting the step data
     for i in range(panels - 1):
         df_temp[['STEP Channel ' + cols[i]]].plot(logy = True, color = '#000000', ax = axs[i + 1])
-    
-    # overwriting df_temp with std
+        
     if (step_long):
         df_temp = df_std[['Mean+' + str(sigma_factor) + 'Sigma_Flux_0', 'Mean+' + str(sigma_factor) + 'Sigma_Flux_15', 'Mean+' + str(sigma_factor) + 'Sigma_Flux_31', 'Mean+' + str(sigma_factor) + 'Sigma_Flux_47']]
         df_temp.columns = ['Mean + ' + str(sigma_factor) + r"$\sigma$" + ' (Channel 0) ' + str(energies_48[0]),
@@ -294,7 +291,7 @@ def plot_step_data(df, df_mean, df_std, sigma_factor, offset, filename = f"{conf
             else:
                 axs[j].axvline(flare_utc, color = 'b')
         
-    for i in misc.intersection(epd_connected_flares_peak_utc, connected_flares_peak_utc):
+    for i in misc_handler.intersection(epd_connected_flares_peak_utc, connected_flares_peak_utc):
         for j in range(1, panels):
             if first_con and j == 1:
                 axs[j].axvline(i, color = 'r', label = 'connected flare-electron event')
@@ -305,12 +302,11 @@ def plot_step_data(df, df_mean, df_std, sigma_factor, offset, filename = f"{conf
     # plotting the timespans where we detect an event in the epd data
     for i in events_epd_utc:
         for j in range(1, panels):
-            bin_offset = int(offset[j]) * config.TIME_RESOLUTION
             if first_EPD and j == 0:
-                axs[j].axvspan(i[0] + timedelta(0, bin_offset), i[1] + timedelta(0, bin_offset), color = 'b', alpha = 0.2, label = 'electron event')
+                axs[j].axvspan(i[0] + datetime.timedelta(0, offset[j] * 300), i[1] + datetime.timedelta(0, offset[j] * 300), color = 'b', alpha = 0.2, label = 'electron event')
                 first_EPD = False
             else:
-                axs[j].axvspan(i[0] + timedelta(0, bin_offset), i[1] + timedelta(0, bin_offset), color = 'b', alpha = 0.2)
+                axs[j].axvspan(i[0] + datetime.timedelta(0, offset[j] * 300), i[1] + datetime.timedelta(0, offset[j] * 300), color = 'b', alpha = 0.2)
     
     axs[0].xaxis.tick_top()
     
@@ -335,7 +331,7 @@ def plot_step_data(df, df_mean, df_std, sigma_factor, offset, filename = f"{conf
     
     return
 
-def histogram(data, bins, filename = f"{config.OUTPUT_DIR}/Images/Hist/histogram.jpg", xlabel = ''):
+def histogram(data, bins, filename = 'Images/Hist/histogram.jpg', xlabel = ''):
     '''
     Function to make a histogram. Primarily used to generate a histogram of how far from the flares origin the possible connection points are.
     
@@ -357,7 +353,7 @@ def histogram(data, bins, filename = f"{config.OUTPUT_DIR}/Images/Hist/histogram
     
     return
 
-def histogram_2d(xdata, ydata, bins, filename = f"{config.OUTPUT_DIR}/Images/Hist/histogram.jpg"):
+def histogram_2d(xdata, ydata, bins, filename = 'Images/Hist/histogram.jpg'):
     plt.clf()
 
     hist = np.histogram2d(xdata, ydata, bins = (bins[0], bins[1]))
@@ -380,7 +376,7 @@ def histogram_2d(xdata, ydata, bins, filename = f"{config.OUTPUT_DIR}/Images/His
     
     plt.savefig(filename, bbox_inches = 'tight')
     
-def histogram_2d_density(xdata, ydata, bins, filename = f"{config.OUTPUT_DIR}/Images/Hist/histogram.jpg"):
+def histogram_2d_density(xdata, ydata, bins, filename = 'Images/Hist/histogram.jpg'):
     plt.clf()
 
     hist = np.histogram2d(xdata, ydata, bins = (bins[0], bins[1]))
@@ -403,7 +399,7 @@ def histogram_2d_density(xdata, ydata, bins, filename = f"{config.OUTPUT_DIR}/Im
     
     # plt.savefig(filename, bbox_inches = 'tight')
     
-def histogram_2d_density_norm(xdata, ydata, bins, filename = f"{config.OUTPUT_DIR}/Images/Hist/histogram.jpg"):
+def histogram_2d_density_norm(xdata, ydata, bins, filename = 'Images/Hist/histogram.jpg'):
     plt.clf()
 
     hist = np.histogram2d(xdata, ydata, bins = (bins[0], bins[1]))

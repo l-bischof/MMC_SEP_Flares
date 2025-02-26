@@ -3,9 +3,8 @@ import pandas as pd
 import numpy as np
 import datetime
 
-import misc
-import epd
-import config
+import misc_handler
+import epd_handler
 
 '''
 Build own dataset of EPD data to reduce access time and memory usage.
@@ -19,12 +18,12 @@ Deletes automatically downloaded files with original data after data reduction i
     2.1 This may take a while
 '''
 
-dir_dest = f'{config.CACHE_DIR}/EPD_Dataset/'
+dir_dest = 'EPD_Dataset/'
 sensor = 'step'
 
 # Downloads complete for 2021-01-01 to 2024-05-31
-date = config.START_DATE
-end_date = config.END_DATE
+date = '2024-05-20'
+end_date = '2024-05-31'
 
 # define column names arrays for ept and step
 ion_columns = []
@@ -50,7 +49,7 @@ for i in [step_columns_short, step_columns_long]:
     i.append('QUALITY_FLAG')
 
 # read data day by day and store it as pickle file
-while date != misc.next_date(end_date) and sensor == 'ept':
+while date != misc_handler.next_date(end_date) and sensor == 'ept':
     print('Currently working on files of: ' + date)
     
     # initialize dataframes for omni viewing (sum of all angles divided by 4)
@@ -58,7 +57,7 @@ while date != misc.next_date(end_date) and sensor == 'ept':
     df_electron_omni = pd.DataFrame()
     
     for viewing in ['sun', 'asun', 'south', 'north']:
-        df_ions_alpha, df_electrons, energies = epd.load_data(sensor, date, date, viewing)
+        df_ions_alpha, df_electrons, energies = epd_handler.load_data(sensor, date, date, viewing)
         
         # check if there is no data available -> empty dataframe (nan)
         if len(df_ions_alpha) == 0:
@@ -73,13 +72,11 @@ while date != misc.next_date(end_date) and sensor == 'ept':
             df_electron = df_electrons['Electron_Flux']
 
         # combine data to 5min intervals and fill missing data with nan
-        df_ion_red = epd.reduce_data(df_ion)
-        df_electron_red = epd.reduce_data(df_electron)
+        df_ion_red = epd_handler.reduce_data(df_ion)
+        df_electron_red = epd_handler.reduce_data(df_electron)
         
         # define location to save files
-        os.makedirs(dir_dest + sensor + '/' + viewing + '/ion/', exist_ok=True)
         dest_ion = dir_dest + sensor + '/' + viewing + '/ion/' + date + '.pkl'
-        os.makedirs(dir_dest + sensor + '/' + viewing + '/electron/', exist_ok=True)
         dest_electron = dir_dest + sensor + '/' + viewing + '/electron/' + date + '.pkl'
         
         # sum up all data for omni viewing
@@ -95,9 +92,7 @@ while date != misc.next_date(end_date) and sensor == 'ept':
         df_electron_red.to_pickle(dest_electron)
     
     # define location to save omni files 
-    os.makedirs(dir_dest + sensor + '/omni/ion/', exist_ok=True)
     dest_ion = dir_dest + sensor + '/omni/ion/' + date + '.pkl'
-    os.makedirs(dir_dest + sensor + '/omni/electron/', exist_ok=True)
     dest_electron = dir_dest + sensor + '/omni/electron/' + date + '.pkl'
     
     # division by 4 as currently data is sum of 4 angles
@@ -108,13 +103,21 @@ while date != misc.next_date(end_date) and sensor == 'ept':
     df_ion_omni.to_pickle(dest_ion)
     df_electron_omni.to_pickle(dest_electron)
     
-    # get next date
-    date = misc.next_date(date)   
+    # delete downloaded files to free up memory space
+    # depending on timeframe files end with: '_V01.cdf', '_V02.cdf' or '_V03.cdf'
+    for viewing in ['sun', 'asun', 'south', 'north']:
+        for i in ['1', '2', '3']:
+            path = "l2/epd/" + sensor + "/solo_L2_epd-" + sensor + "-" + viewing + "-rates_" + date[0:4] + date[5:7] + date[8:10] + "_V0" + i + ".cdf"
+            if os.path.isfile(path):
+                os.remove(path)
     
-while date != misc.next_date(end_date) and sensor == 'step':
+    # get next date
+    date = misc_handler.next_date(date)   
+    
+while date != misc_handler.next_date(end_date) and sensor == 'step':
     print('Currently working on files of: ' + date)
     
-    df_step, energies = epd.load_data(sensor, date, date)
+    df_step, energies = epd_handler.load_data(sensor, date, date)
     
     # check if there is no data available -> empty dataframe (nan)
     if len(df_step) == 0:
@@ -146,9 +149,15 @@ while date != misc.next_date(end_date) and sensor == 'step':
 
     # combine data to 5min intervals and fill missing data with nan
     # then save the reduced data to a pickle file
-    directory = dir_dest + sensor + '/'
-    os.makedirs(directory, exist_ok=True)
-    epd.reduce_data(df_step, sensor).to_pickle(directory + date + '.pkl')
+    epd_handler.reduce_data(df_step, sensor).to_pickle(dir_dest + sensor + '/' + date + '.pkl')
+    
+    # delete downloaded files to free up memory space
+    # depending on timeframe files end with: '_V01.cdf', '_V02.cdf' or '_V03.cdf'
+    for i in ['rates', 'main']:
+        for j in ['1', '2', '3']:
+            path = "l2/epd/" + sensor + "/solo_L2_epd-" + sensor + "-" + i + "_" + date[0:4] + date[5:7] + date[8:10] + "_V0" + j + ".cdf"
+            if os.path.isfile(path):
+                os.remove(path)
     
     # get next date
-    date = misc.next_date(date)
+    date = misc_handler.next_date(date)
