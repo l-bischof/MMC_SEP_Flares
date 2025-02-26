@@ -6,7 +6,7 @@ It determines if the flares origin is within delta (to be chosen by the user) de
 connected point on the sun's surface.
 
 programming:
-TODO: Find a better way to collect Magnetic Connectivity Tool (MCT) data, e.g. without opening a browser window for every 6-hour period needed to be downloaded
+DONE: Find a better way to collect Magnetic Connectivity Tool (MCT) data, e.g. without opening a browser window for every 6-hour period needed to be downloaded
 
 scientific:
 TODO: improve metric to classify possible connection points and account for their likelyhood
@@ -20,11 +20,13 @@ import pandas as pd
 import numpy as np
 import datetime
 
-import stix_handler
+import stix
 import connectivity_tool
 import plots
-import epd_handler
-import misc_handler
+import epd
+import misc
+
+import config
 
 # --------------------------------- Input parameters ---------------------------------
 
@@ -34,18 +36,18 @@ opt_output = False
 plot_non_connected = True
 
 # work with data and search for events within the following timespan
-start_date = "2024-05-20"
-end_date = "2024-05-31"
+start_date = config.START_DATE
+end_date = config.END_DATE
 
 # --------------------------------------- STIX ---------------------------------------
 
 delta = 10      # radius of connection points that get accepted (degrees)
 
 # read STIX flare list and extract coordinates of the origin
-stix_flares = stix_handler.read_list()
+stix_flares = stix.read_list()
 
 # get range of flares that are within the defined timeframe
-flare_start_id, flare_end_id = stix_handler.flares_range(start_date, end_date, stix_flares['peak_UTC'])
+flare_start_id, flare_end_id = stix.flares_range(start_date, end_date, stix_flares['peak_UTC'])
 
 # returns a list of candidates the MCT (Magnetic Connectivity Tool) expects the Solar Orbiter to be connected with
 # flare_distances is currently not used for anything (has been added as it might yield interesting data)
@@ -68,18 +70,18 @@ viewing = 'sun' # ['sun', 'asun', 'north', 'south', 'omni']
 
 # load data from compressed EPD dataset
 # epd_handler.load_pickles() loads dataframe of timespan defined (including end_date)
-df = epd_handler.load_pickles(sensor, start_date, end_date, 'electron', viewing)
+df = epd.load_pickles(sensor, start_date, end_date, 'electron', viewing)
 
 print("Pickle files loaded...")
 
 # compute running averade and standard deviation
-running_mean, running_std = epd_handler.running_average(df)
+running_mean, running_std = epd.running_average(df)
 
 print("Running averages computed...")
 
 # try to find events in data
 sigma_factor = 2.5
-events = epd_handler.find_event(df, running_mean, running_std, sigma_factor)
+events = epd.find_event(df, running_mean, running_std, sigma_factor)
 
 print("Events found...")
 
@@ -96,12 +98,14 @@ if flare_end_id != -1:
         utc = stix_flares['peak_UTC'][i]
         timestamp = pd.Timestamp(utc[0:10] + " " + utc[11:19])
         
-        delayed_utc.append(misc_handler.add_delay('electron', i, timestamp, indirect_factor, stix_flares['solo_position_AU_distance'][i]))
+        # Timestamp of the flare peak
+        delayed_utc.append(misc.add_delay('electron', i, timestamp, indirect_factor, stix_flares['solo_position_AU_distance'][i]))
         
+        # Timestamp of the flare start
         utc_start = stix_flares['start_UTC'][i]
         timestamp = pd.Timestamp(utc_start[0:10] + " " + utc_start[11:19])
         
-        delayed_utc_start.append(misc_handler.add_delay('electron', i, timestamp, indirect_factor, stix_flares['solo_position_AU_distance'][i]))
+        delayed_utc_start.append(misc.add_delay('electron', i, timestamp, indirect_factor, stix_flares['solo_position_AU_distance'][i]))
         
     for i in range(len(delayed_utc)):
         # EPT has 34 energy channels
@@ -152,5 +156,5 @@ for col in running_mean.columns:
 running_mean.columns = col_names_mean
 running_std.columns = col_names_std
 
-plots.plot_epd_data(df, running_mean, running_std, sigma_factor, 'Images/Electron.jpg', connected_flares_peak_utc,
+plots.plot_epd_data(df, running_mean, running_std, sigma_factor, f'{config.OUTPUT_DIR}/Images/Electron.jpg', connected_flares_peak_utc,
                     epd_connected_flares_peak_utc, events, stix_flares['peak_UTC'][flare_start_id:flare_end_id + 1])
