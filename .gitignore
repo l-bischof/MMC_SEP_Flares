@@ -189,3 +189,5 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 Code/SolarMACH/parker_spiral_distance_temp.pkl
+Cache/EPD_DATA.tar.xz
+Cache/CON_DATA.tar.xz

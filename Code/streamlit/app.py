@@ -13,8 +13,10 @@ import step
 import ept
 from io import BytesIO
 import matplotlib
+import bundler
 
 
+bundler.auto_download()
 dpi = 800
 matplotlib.rc("savefig", dpi = dpi)
 

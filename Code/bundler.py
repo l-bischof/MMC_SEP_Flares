@@ -1,5 +1,6 @@
 import config
 import shutil
+import urllib.request
 import os
 
 def pack_epd():
@@ -11,6 +12,10 @@ def unpack_epd():
         return
     shutil.unpack_archive(f"{config.CACHE_DIR}/EPD_DATA.tar.xz", f"{config.CACHE_DIR}/EPD_Dataset/")
 
+def download_epd():
+    if not os.path.isfile(f"{config.CACHE_DIR}/EPD_DATA.tar.xz"):
+        urllib.request.urlretrieve("https://huggingface.co/datasets/lb32/MMC_Data/resolve/main/EPD_DATA.tar.xz", 
+                                f"{config.CACHE_DIR}/EPD_DATA.tar.xz")
 
 def pack_connectivity_tool():
     shutil.make_archive(f"{config.CACHE_DIR}/CON_DATA", "xztar", f"{config.CACHE_DIR}/connectivity_tool_downloads/")
@@ -21,6 +26,17 @@ def unpack_connectivity_tool():
         return
     shutil.unpack_archive(f"{config.CACHE_DIR}/CON_DATA.tar.xz", f"{config.CACHE_DIR}/connectivity_tool_downloads/")
 
+
+def download_connectivity_tool():
+    if not os.path.isfile(f"{config.CACHE_DIR}/CON_DATA.tar.xz"):
+        urllib.request.urlretrieve("https://huggingface.co/datasets/lb32/MMC_Data/resolve/main/CON_DATA.tar.xz", 
+                                f"{config.CACHE_DIR}/CON_DATA.tar.xz")
+
+def auto_download():
+    download_epd()
+    download_connectivity_tool()
+    unpack_epd()
+    unpack_connectivity_tool()
 
 
 
