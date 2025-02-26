@@ -33,10 +33,14 @@ def download_connectivity_tool():
                                 f"{config.CACHE_DIR}/CON_DATA.tar.xz")
 
 def auto_download():
+    print("Starting Download...")
     download_epd()
+    print("Finished EPD-Download")
     download_connectivity_tool()
+    print("Finished CON-Download")
     unpack_epd()
     unpack_connectivity_tool()
+    print("Finished Setup")
 
 
 

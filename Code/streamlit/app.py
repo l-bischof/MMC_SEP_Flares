@@ -1,5 +1,9 @@
 import sys
-sys.path.insert(0, '.')
+import os
+dirname = os.path.dirname(__file__)
+code_dir = os.path.join(dirname, '../')
+sys.path.insert(0, code_dir)
+os.chdir(code_dir)
 
 import streamlit as st
 import datetime
