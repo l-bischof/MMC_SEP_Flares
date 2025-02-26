@@ -1,4 +1,3 @@
-from solo_epd_loader import epd_load
 import pandas as pd
 import config
 import misc
@@ -15,6 +14,7 @@ def load_data(sensor, utc_start, utc_end, viewing = 'omni'):
     (bool) autodownload: if True, will try to download missing data files from SOAR
     (bool) only_averages: If True, will for STEP only return the averaged fluxes, and not the data of each of the 15 Pixels. This will reduce the memory consumption. By default False.
     '''
+    from solo_epd_loader import epd_load
     level = 'l2' # always load l2 data!
     
     startdate = int(utc_start[0:4] + utc_start[5:7] + utc_start[8:10])
