@@ -27,6 +27,7 @@ def parker_spiral_distance(timestamp):
     return r / (2 * theta) * (theta * math.sqrt(1 + theta**2) + math.log(theta + math.sqrt(1 + theta**2)))
 
 def mag_footpoint_lonitude(timestamp):
+    from solarmach import SolarMACH
     utc = str(timestamp)[0:10] + ' ' + str(timestamp)[11:19]    
     body_list = ['Solar Orbiter']
     df = SolarMACH(utc, body_list).coord_table
