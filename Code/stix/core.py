@@ -1,9 +1,6 @@
 import pandas as pd
 import datetime
-import math
 import config
-
-import misc
 
 def read_list():
     '''

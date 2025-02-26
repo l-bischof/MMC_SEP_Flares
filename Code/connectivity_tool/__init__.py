@@ -1,1 +1,1 @@
-from .core import find_connected_flares
+from .core import find_connected_flares, read_data
