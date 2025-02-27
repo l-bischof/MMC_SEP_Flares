@@ -1,5 +1,6 @@
 import sys
 import os
+# Making sure we have access to all the modules and are in the correct working directory
 dirname = os.path.dirname(__file__)
 code_dir = os.path.join(dirname, '../')
 sys.path.insert(0, code_dir)
@@ -19,19 +20,28 @@ from io import BytesIO
 import matplotlib
 import bundler
 
-
-bundler.auto_download()
+st.set_page_config(layout="centered", page_icon=":material/flare:", page_title="MMC Flares")
 dpi = 800
 matplotlib.rc("savefig", dpi = dpi)
 
-stix_flares = read_list()
-st.set_page_config(layout="centered")
+@st.cache_resource
+def setup():
+    bundler.auto_download()
+
+@st.cache_resource
+def get_stix_flares():
+    return read_list()
+
+setup()
+stix_flares = get_stix_flares()
 
 # Filtering the flares to the date range
 dates = pd.to_datetime(stix_flares['peak_UTC'])
 
 first_flare = dates.min()
 last_flare = dates.max()
+
+st.title("Magnetic Connectivity between Flares and SEP Events")
 
 with st.sidebar:
     START_DATE = st.date_input("Start", datetime.date(2021, 5, 21), first_flare, last_flare)
@@ -52,6 +62,8 @@ with st.sidebar:
         if START_DATE <= sensor_switch and END_DATE >= sensor_switch:
             st.warning(f"Cannot include date before and after {sensor_switch} as mesurements changed")
             st.stop()
+
+    download = st.toggle("Activate Downloads")
 
     with st.expander("More Options:"):
         DELTA = st.slider("Delta Flares", 1, 50, 10)
@@ -106,17 +118,22 @@ st.text(f"Found {len(connected_flares)} of {len(flare_range)} flares identified 
 df_sensor = epd.load_pickles(sensor, str(START_DATE), str(END_DATE), viewing=VIEWING)
 
 if sensor == "step":
-    plt = step.create_step(df_sensor, flare_range, connected_flares)
-    st.pyplot(plt)
-    virtual_file = BytesIO()
-    plt.savefig(virtual_file, format="svg")
-    virtual_file.seek(0)
-    st.download_button("Download Plot", data=virtual_file.read(),file_name=f"{START_DATE}-{END_DATE}.svg")
+    with st.spinner("Creating your plot...", show_time=True):
+        plt = step.create_step(df_sensor, flare_range, connected_flares)
+        st.pyplot(plt)
+    if download:
+        virtual_file = BytesIO()
+        plt.savefig(virtual_file, format="svg")
+        virtual_file.seek(0)
+        st.download_button("Download Plot", data=virtual_file.read(),file_name=f"{START_DATE}-{END_DATE}.svg")
 
 if sensor == "ept":
-    plt = ept.create_ept(df_sensor, flare_range, connected_flares)
-    st.pyplot(plt)
-    virtual_file = BytesIO()
-    plt.savefig(virtual_file, format="svg")
-    virtual_file.seek(0)
-    st.download_button("Download Plot", data=virtual_file.read(),file_name=f"{START_DATE}-{END_DATE}.svg")
+    with st.spinner("Creating your plot...", show_time=True):
+        plt = ept.create_ept(df_sensor, flare_range, connected_flares)
+        st.pyplot(plt)
+    
+    if download:
+        virtual_file = BytesIO()
+        plt.savefig(virtual_file, format="svg")
+        virtual_file.seek(0)
+        st.download_button("Download Plot", data=virtual_file.read(),file_name=f"{START_DATE}-{END_DATE}.svg")
