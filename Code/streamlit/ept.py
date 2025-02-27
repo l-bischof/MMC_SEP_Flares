@@ -31,18 +31,18 @@ def plot_epd_data(df, df_mean, df_std, sigma_factor, connected_flares_peak_utc =
     
     plt.rcParams["figure.figsize"] = (20, 9)
     
-    fig, axs = plt.subplots(4, sharex = False)
+    fig, axs = plt.subplots(5, sharex = False)
     plt.subplots_adjust(hspace = 0)
     
-    df_temp = df[['Electron_Flux_1', 'Electron_Flux_1', 'Electron_Flux_10', 'Electron_Flux_32']]
-    df_temp.columns = ['_Flare', 'EPT Channel 1', 'EPT Channel 10', 'EPT Channel 32']
+    df_temp = df[['Electron_Flux_1', 'Electron_Flux_1', 'Electron_Flux_10', 'Electron_Flux_20','Electron_Flux_32']]
+    df_temp.columns = ['_Flare', 'EPT Channel 1', 'EPT Channel 10', 'EPT Channel 20', 'EPT Channel 32']
     df_temp.loc[:, '_Flare'] = np.nan # no data will be plotted but the datetime x-axis remains
     
-    cols = ['1', '10', '32']
+    cols = ['1', '10', '20', '32']
 
     df_temp[['_Flare']].plot(color = '#000000', ax = axs[0])
     
-    for i in range(3):   
+    for i in range(4):   
         df_temp[['EPT Channel ' + cols[i]]].plot(logy = True, color = '#000000', ax = axs[i + 1])
 
     # compute mean + x * Sigma and plot it.
@@ -50,12 +50,13 @@ def plot_epd_data(df, df_mean, df_std, sigma_factor, connected_flares_peak_utc =
     for i in cols:
         df_std.loc[:, df_std[['Mean+' + str(sigma_factor) + 'Sigma_Flux_' + i]].columns[0]] += df_mean[['Mean_Flux_' + i]][df_mean[['Mean_Flux_' + i]].columns[0]]
     
-    df_temp = df_std[['Mean+' + str(sigma_factor) + 'Sigma_Flux_1', 'Mean+' + str(sigma_factor) + 'Sigma_Flux_10', 'Mean+' + str(sigma_factor) + 'Sigma_Flux_32']]
+    df_temp = df_std[['Mean+' + str(sigma_factor) + 'Sigma_Flux_1', 'Mean+' + str(sigma_factor) + 'Sigma_Flux_10', 'Mean+' + str(sigma_factor) + 'Sigma_Flux_20', 'Mean+' + str(sigma_factor) + 'Sigma_Flux_32']]
     df_temp.columns = ['Mean + ' + str(sigma_factor) + r"$\sigma$" + ' (Channel 1)' + str(energies[1]),
                        'Mean + ' + str(sigma_factor) + r"$\sigma$" + ' (Channel 10)' + str(energies[10]),
+                       'Mean + ' + str(sigma_factor) + r"$\sigma$" + ' (Channel 20)' + str(energies[20]),
                        'Mean + ' + str(sigma_factor) + r"$\sigma$" + ' (Channel 32)' + str(energies[32])]
     
-    for i in range(3):
+    for i in range(4):
         df_temp[[df_temp.columns[i]]].plot(color = 'g', ax = axs[i + 1])
     
     plt.setp(axs[0], yticks=[])
@@ -77,16 +78,16 @@ def plot_epd_data(df, df_mean, df_std, sigma_factor, connected_flares_peak_utc =
     
     # plot epd connected flares
     for flare_utc in epd_connected_flares_peak_utc:
-        for j in range(3):
-            if first_EPD_can and j == 2:
+        for j in range(4):
+            if first_EPD_can and j == 3:
                 axs[j + 1].axvline(flare_utc, color = 'b', label = 'temporal coincidence with electron event')
                 first_EPD_can = False
             else:
                 axs[j + 1].axvline(flare_utc, color = 'b')
         
     for i in misc.intersection(epd_connected_flares_peak_utc, connected_flares_peak_utc):
-        for j in range(3):
-            if first_con and j == 2:
+        for j in range(4):
+            if first_con and j == 3:
                 axs[j + 1].axvline(i, color = 'r', label = 'connected flare-electron event')
                 first_con = False
             else:
@@ -94,15 +95,15 @@ def plot_epd_data(df, df_mean, df_std, sigma_factor, connected_flares_peak_utc =
                
     # plotting the timespans where we detect an event in the epd data
     for i in events_epd_utc:
-        for j in range(3):
-            if first_EPD and j == 2:
+        for j in range(4):
+            if first_EPD and j == 3:
                 axs[j + 1].axvspan(i[0], i[1], color = 'b', alpha = 0.2, label = 'electron event')
                 first_EPD = False
             else:
                 axs[j + 1].axvspan(i[0], i[1], color = 'b', alpha = 0.2)
      
     # plot legend of graphs
-    for i in range(4):
+    for i in range(5):
         axs[i].legend()
         if i != 0:
             axs[i].secondary_yaxis('right')
@@ -112,8 +113,9 @@ def plot_epd_data(df, df_mean, df_std, sigma_factor, connected_flares_peak_utc =
     axs[0].set_xlim(*axs[3].get_xlim())
     axs[1].get_xaxis().set_visible(False)
     axs[2].get_xaxis().set_visible(False)
+    axs[3].get_xaxis().set_visible(False)
     
-    axs[3].legend(loc = 'lower right')
+    axs[4].legend(loc = 'lower right')
     
     # save graphs as one plot to add axis labels
     fig.add_subplot(111, frameon = False)
