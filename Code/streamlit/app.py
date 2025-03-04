@@ -67,6 +67,7 @@ with st.sidebar:
 
     with st.expander("More Options:"):
         DELTA = st.slider("Delta Flares", 1, 50, 10)
+        # WINDOW_LEN = st.slider("Window Lengths", 6, 24, 18)
 
 # --------------------------------------- STIX ---------------------------------------
 

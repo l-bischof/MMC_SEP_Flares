@@ -110,14 +110,13 @@ def find_event(df, df_mean, df_std, sigma_factor):
     return events
     
 
-def running_average(df: pd.DataFrame):
+def running_average(df: pd.DataFrame, length=18):
     '''
     Computes running average to enable finding events in EPD data
     
     parameters:
     df:     Pandas Dataframe with EPD data
     '''
-    length = 18 # number of bins to average over (x * time resolution)
 
     df_mean = df.rolling(window=length).mean()
     df_std = df.rolling(window=length).std(ddof=0)

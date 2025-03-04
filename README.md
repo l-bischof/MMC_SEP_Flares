@@ -9,21 +9,13 @@ This project aims to model the accuracy of the magnetic connectivity tool (MCT) 
 This project contains the code used for this project and should allow its user to automate the process of finding magnetically connected flare - SEP electron events. As there are many factors influencing the accuracy of the automated process, it is advised to mainly use this in a pre-selection process or manually refine the results. Scientific advancements in the field of solar physics and improvements of our method will hopefully increase the accuracy of this automated process to a point where these manual steps will not be needed anymore.
 
 ## Usage:
-
-1. Go into the *Code* directory and change the variable *download_dir* in *connectivity_tool.py* to the path to your download directory.
-   
-2. Generate the required datasets with *generate_epd_dataset.py* and *generate_solar_mach_dataset.py*.
-   
-    a. In *generate_epd_dataset.py* set start and end date[^1] to only generate the dataset for the required time period.
-   
-    b. Depending on the time period that is wished to be examined, this might take quite a bit of memory space. Hence the upload of the full datasets is omitted.
-
-3. a) Run the script for the STEP sensor *step_comparison.py*[^2] after setting the start and end date correctly[^1].
-
-   b) Run the script for the EPT sensor *ept_comparison.py* after setting the start and end date correctly[^1] and choosing the wished viewing angle.
-
-[^1]: write the date in the yyyy-mm-dd format
-[^2]: do not simulate periods before and after 22.10.2021 in one run! (Changes in the datasets of EPD/STEP do not allow for a direct comparison of data before and after this date.)
+All the code is tested to run with Python 3.13.2. I also strongly recommend using venv for your installation.
+1. Install the requirements: ```sh
+    pip install -r requirements.txt
+    ```
+2. Run the streamlit app: ```sh
+    py -m streamlit run Code/streamlit/app.py
+    ```
 
 ## References:
 
