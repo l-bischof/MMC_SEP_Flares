@@ -10,10 +10,12 @@ This project contains the code used for this project and should allow its user t
 
 ## Usage:
 All the code is tested to run with Python 3.13.2. I also strongly recommend using venv for your installation.
-1. Install the requirements: ```sh
+1. Install the requirements: 
+    ```sh
     pip install -r requirements.txt
     ```
-2. Run the streamlit app: ```sh
+2. Run the streamlit app: 
+    ```sh
     py -m streamlit run Code/streamlit/app.py
     ```
 
