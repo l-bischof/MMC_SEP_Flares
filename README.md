@@ -18,6 +18,10 @@ All the code is tested to run with Python 3.13.2. I also strongly recommend usin
     ```sh
     py -m streamlit run Code/streamlit/app.py
     ```
+    Or depending on your environment:
+    ```sh
+    python -m streamlit run Code/streamlit/app.py
+    ```
 
 ## References:
 
