@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import misc
+from classes import Config
 import epd
 import streamlit as st
 
@@ -130,14 +131,14 @@ def plot_epd_data(df, df_mean, df_std, sigma_factor, connected_flares_peak_utc =
     return plt
 
 
-def create_ept(df_ept: pd.DataFrame, flare_range: pd.DataFrame, connected_flares: pd.DataFrame):
+def create_ept(df_ept: pd.DataFrame, flare_range: pd.DataFrame, connected_flares: pd.DataFrame, _config: Config):
     # compute running averade and standard deviation
-    running_mean, running_std = epd.running_average(df_ept)
+    running_mean, running_std = epd.running_average(df_ept, _config.window_length)
 
     print("Running averages computed...")
 
     # try to find events in data
-    sigma_factor = 2.5
+    sigma_factor = _config.ept_sigma
     events = epd.find_event(df_ept, running_mean, running_std, sigma_factor)
 
     print("Events found...")

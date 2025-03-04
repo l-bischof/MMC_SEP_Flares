@@ -5,18 +5,19 @@ import matplotlib.pyplot as plt
 import math
 import misc
 import epd
+from classes import Config
 import config
 import streamlit as st
 
 
-def _cleanup_sensor(df_step: pd.DataFrame, length):
+def _cleanup_sensor(df_step: pd.DataFrame, length, window_length):
     df_step_electron = pd.DataFrame(columns = [], index = df_step.index)
     zipped_columns = [(f'Electron_Avg_Flux_{i}', f"Integral_Avg_Flux_{i}", f"Magnet_Avg_Flux_{i}") for i in range(length)]
 
     for electron_col, integral_col, magnet_col in zipped_columns:
         df_step_electron[electron_col] = df_step[integral_col] - df_step[magnet_col]
 
-    running_mean, running_std = epd.running_average(df_step_electron)
+    running_mean, running_std = epd.running_average(df_step_electron, window_length)
 
     return df_step_electron, running_mean, running_std
 
@@ -254,13 +255,13 @@ def _plot_step_data(df, df_mean, df_std, sigma_factor, offset, connected_flares_
     return plt
 
 
-def create_step(df_step: pd.DataFrame, flare_range: pd.DataFrame, connected_flares: pd.DataFrame):
+def create_step(df_step: pd.DataFrame, flare_range: pd.DataFrame, connected_flares: pd.DataFrame, _config: Config):
     # For the first months a different number of energy channels is used. This detects if you are within that time.
     length = 32
     if ('Integral_Avg_Flux_47' in df_step.columns):
         length = 48
 
-    df_step_electron, running_mean, running_std = _cleanup_sensor(df_step, length)
+    df_step_electron, running_mean, running_std = _cleanup_sensor(df_step, length, _config.window_length)
 
     # Using the precomputed parker spiral distance
     parker_dist_series = pd.read_pickle(f"{config.CACHE_DIR}/SolarMACH/parker_spiral_distance.pkl")['Parker_Spiral_Distance']
@@ -268,7 +269,7 @@ def create_step(df_step: pd.DataFrame, flare_range: pd.DataFrame, connected_flar
     df_offset_step, offset = _calculate_delays(flare_range, length, parker_dist_series, df_step_electron)
 
     # try to find events in data
-    sigma_factor = 3.5
+    sigma_factor = _config.step_sigma
     events = epd.find_event(df_offset_step, running_mean, running_std, sigma_factor)
 
     print("Events found...")

@@ -3,6 +3,7 @@ import os
 # Making sure we have access to all the modules and are in the correct working directory
 dirname = os.path.dirname(__file__)
 code_dir = os.path.join(dirname, '../')
+sys.path.insert(0, dirname)
 sys.path.insert(0, code_dir)
 os.chdir(code_dir)
 
@@ -16,6 +17,7 @@ from connectivity_tool import read_data
 import epd
 import step
 import ept
+from classes import Config
 from io import BytesIO
 import matplotlib
 import bundler
@@ -67,7 +69,11 @@ with st.sidebar:
 
     with st.expander("More Options:"):
         DELTA = st.slider("Delta Flares", 1, 50, 10)
-        # WINDOW_LEN = st.slider("Window Lengths", 6, 24, 18)
+        WINDOW_LEN = st.slider("Window Lengths", 6, 24, 18)
+        SIGMA_STEP = st.slider("STEP-Sigma", 2., 5., 3.5)
+        SIGMA_EPT = st.slider("EPT-Sigma", 1., 4., 2.5)
+
+        CONFIG = Config(window_length=WINDOW_LEN, step_sigma=SIGMA_STEP, ept_sigma=SIGMA_EPT, delta_flares=DELTA)
 
 # --------------------------------------- STIX ---------------------------------------
 
@@ -120,7 +126,7 @@ df_sensor = epd.load_pickles(sensor, str(START_DATE), str(END_DATE), viewing=VIE
 
 if sensor == "step":
     with st.spinner("Creating your plot...", show_time=True):
-        plt = step.create_step(df_sensor, flare_range, connected_flares)
+        plt = step.create_step(df_sensor, flare_range, connected_flares, CONFIG)
         st.pyplot(plt)
     if download:
         virtual_file = BytesIO()
@@ -130,7 +136,7 @@ if sensor == "step":
 
 if sensor == "ept":
     with st.spinner("Creating your plot...", show_time=True):
-        plt = ept.create_ept(df_sensor, flare_range, connected_flares)
+        plt = ept.create_ept(df_sensor, flare_range, connected_flares, CONFIG)
         st.pyplot(plt)
     
     if download:
