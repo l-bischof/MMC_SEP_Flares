@@ -59,7 +59,7 @@ with st.sidebar:
 
     VIEWING = "none"
     if sensor == "ept":
-        VIEWING = st.selectbox("Direction", ('sun', 'asun', 'north', 'south', 'omni'))
+        VIEWING = st.selectbox("Direction", ('sun', 'asun', 'north', 'south'))
     elif sensor == "step":
         if START_DATE <= sensor_switch and END_DATE >= sensor_switch:
             st.warning(f"Cannot include date before and after {sensor_switch} as mesurements changed")
