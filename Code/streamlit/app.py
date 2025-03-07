@@ -16,11 +16,14 @@ import math
 from connectivity_tool import read_data
 import epd
 import step
-import ept
+import misc
 from classes import Config
 from io import BytesIO
 import matplotlib
+import matplotlib.pyplot as plt
 import bundler
+import config
+from matplotlib.dates import date2num
 
 st.set_page_config(layout="centered", page_icon=":material/flare:", page_title="MMC Flares")
 dpi = 800
@@ -43,6 +46,8 @@ dates = pd.to_datetime(stix_flares['peak_UTC'])
 first_flare = dates.min()
 last_flare = dates.max()
 
+stix_flares["_date"] = dates
+
 st.title("Magnetic Connectivity between Flares and SEP Events")
 
 with st.sidebar:
@@ -54,16 +59,6 @@ with st.sidebar:
         st.stop()
 
     sensor_switch = datetime.date(2021, 10, 22)
-
-    sensor = st.selectbox("Select a sensor", ("step", "ept"))
-
-    VIEWING = "none"
-    if sensor == "ept":
-        VIEWING = st.selectbox("Direction", ('sun', 'asun', 'north', 'south', 'omni'))
-    elif sensor == "step":
-        if START_DATE <= sensor_switch and END_DATE >= sensor_switch:
-            st.warning(f"Cannot include date before and after {sensor_switch} as mesurements changed")
-            st.stop()
 
     download = st.toggle("Activate Downloads")
 
@@ -82,6 +77,7 @@ dates = pd.to_datetime(stix_flares['peak_UTC'])
 mask = (pd.Timestamp(START_DATE) <= dates) & (dates < pd.Timestamp(END_DATE) + pd.Timedelta(days=1))
 flare_range = stix_flares[mask]
 
+parker_dist_series = pd.read_pickle(f"{config.CACHE_DIR}/SolarMACH/parker_spiral_distance.pkl")['Parker_Spiral_Distance']
 
 flare_range["Rounded"] = flare_range["peak_UTC"].apply(closest_timestamp)
 
@@ -116,31 +112,202 @@ if len(flare_range) == 0:
 flare_range["MCT"] = flare_range["Min Dist"] <= DELTA
 connected_flares = flare_range[flare_range["MCT"]]
 
-
-st.text(f"Found {len(connected_flares)} of {len(flare_range)} flares identified by STIX are deemed "\
-        "connected by the magnetic connectivty Tool")
-
 # --------------------------------------- EPD ---------------------------------------
 
-df_sensor = epd.load_pickles(sensor, str(START_DATE), str(END_DATE), viewing=VIEWING)
+dict_df_sensor:dict[str, pd.DataFrame] = {}
 
-if sensor == "step":
-    with st.spinner("Creating your plot...", show_time=True):
-        plt = step.create_step(df_sensor, flare_range, connected_flares, CONFIG)
-        st.pyplot(plt)
-    if download:
-        virtual_file = BytesIO()
-        plt.savefig(virtual_file, format="svg")
-        virtual_file.seek(0)
-        st.download_button("Download Plot", data=virtual_file.read(),file_name=f"{START_DATE}-{END_DATE}.svg")
+for direction in ["sun", "asun", "north", "south"]:
+    dict_df_sensor[f"EPT-{direction.upper()}"] = epd.load_pickles("ept", str(START_DATE), str(END_DATE), viewing=direction)
 
-if sensor == "ept":
-    with st.spinner("Creating your plot...", show_time=True):
-        plt = ept.create_ept(df_sensor, flare_range, connected_flares, CONFIG)
-        st.pyplot(plt)
+
+df_step = epd.load_pickles("step", str(START_DATE), str(END_DATE))
+df_step = step._cleanup_sensor(df_step)
+df_step, step_offsets = step._shift_sensor(df_step, flare_range, length=len(df_step.columns), parker_dist_series=parker_dist_series)
+dict_df_sensor["STEP"] = df_step
+
+dict_df_mean:dict[str, pd.DataFrame] = {}
+dict_df_std:dict[str, pd.DataFrame] = {}
+dict_df_event:dict[str, pd.DataFrame] = {}
+dict_df_connection:dict[str, pd.DataFrame] = {}
+dict_df_offset:dict[str, pd.DataFrame] = {}
+
+flare_range["_date_start"] = pd.to_datetime(stix_flares['start_UTC']).dt.floor("60s")
+flare_range["_date_peak"] = pd.to_datetime(stix_flares['peak_UTC']).dt.floor("60s")
+
+for sensor in dict_df_sensor:
+    running_mean, running_std = epd.running_average(dict_df_sensor[sensor], CONFIG.window_length)
+    dict_df_mean[sensor] = running_mean
+    dict_df_std[sensor] = running_std
+    sigma = CONFIG.ept_sigma if "EPT" in sensor else CONFIG.step_sigma
+    events = epd.find_event(dict_df_sensor[sensor], dict_df_mean[sensor], dict_df_std[sensor], sigma)
+    events = pd.DataFrame(events, columns=["Start", "End"])
+    dict_df_event[sensor] = events
+
+    if "STEP" in sensor:
+        step_connections = flare_range.copy()
+        step_connections["EPD_EVENT"] = np.nan
+        for i in flare_range.index:
+            utc_start = flare_range['_date_start'][i]
+            utc_peak = flare_range['_date_peak'][i]
+
+            
+            dt = misc.step_delay(utc_start, len(df_step.columns), parker_dist_series[i])
+            
+            delay = []
+            for j in range(len(df_step.columns)):
+                delay_start = utc_start + datetime.timedelta(0, math.floor(dt[j]))
+                delay_peak_indirect = utc_peak + datetime.timedelta(0, math.floor(dt[j] * CONFIG.indirect_factor))
+                
+                mask = (delay_start < events["Start"]) & (events["Start"] < delay_peak_indirect)
+                for event in events[mask].index:
+                    step_connections.loc[i, "EPD_EVENT"] = event
+                    break
+            
+        dict_df_connection[sensor] = step_connections
+    else:
+        ept_connection = flare_range.copy()
+        ept_connection["EPD_EVENT"] = np.nan
+
+        for i in flare_range.index:
+            utc_start = flare_range['_date_start'][i]
+            utc_peak = flare_range['_date_peak'][i]
+            solo_distance = flare_range['solo_position_AU_distance'][i]
+            
+            # Timestamp of the flare start
+            flare_start = misc.add_delay('electron', i, utc_start, CONFIG.indirect_factor, solo_distance)
+            # Timestamp of the flare peak
+            flare_peak = misc.add_delay('electron', i, utc_peak, CONFIG.indirect_factor, solo_distance)
+
+            for (flare_start_direct, _), (_, flare_peak_indirect) in zip(flare_start, flare_peak):
+                mask = (flare_start_direct < events["Start"]) & (events["Start"] < flare_peak_indirect)
+                for event in events[mask].index:
+                    ept_connection.loc[i, "EPD_EVENT"] = event
+                    break
+
+
+        dict_df_connection[sensor] = ept_connection
+            
+            
+            
+table = []
+indecies = set()
+
+for sensor in dict_df_sensor:
+    df_conn = dict_df_connection[sensor]
+    mask = (~df_conn["EPD_EVENT"].isna()) & df_conn["MCT"]
+    table.append([sensor, len(df_conn[mask])])
+    indecies = indecies.union(df_conn[mask].index)
+
+table.append(["Total", len(indecies)])
+table = pd.DataFrame(table, columns=["Sensor", "Flares deemed connected"])
+
+
+
+st.dataframe(table)
+
+sensor = st.selectbox("Render", dict_df_connection.keys())
+
+
+df_flares = dict_df_connection[sensor]
+df_mean = dict_df_mean[sensor]
+df_std = dict_df_std[sensor]
+df_sensor = dict_df_sensor[sensor]
+events = dict_df_event[sensor]
+
+sigma = CONFIG.ept_sigma if "EPT" in sensor else CONFIG.step_sigma
+columns = []
+
+for i in range(1, len(df_sensor.columns), len(df_sensor.columns)//4):
+    columns.append(df_sensor.columns[int(i)])
+
+plt.rcParams["figure.figsize"] = (20, 9)
+
+fig, (flare_ax, *axs) = plt.subplots(5, sharex = False)
+plt.subplots_adjust(hspace = 0)
+
+df_hold = df_std.copy()
+df_hold[""] = np.nan
+df_hold[""].plot(color="black", ax=flare_ax)
+
+
+for ax, column in zip(axs, columns):
+    num = column.split("_")[-1]
+    df_sensor[column].plot(color="black", logy=True, ax=ax, label=f"{sensor} Channel {num}")
+    df_threshhold = df_std[column] * sigma + df_mean[column]
+    df_threshhold.plot(color="g", logy=True, ax=ax, label=f'Mean + {sigma} $\sigma$ (Channel {num})')
+
+
+# Only plot each label once, else the whole legend is filled
+shown_labels = set()
+
+for i in df_flares.index:
+    kwargs = {"color": "black", "label": "Flare"}
+
+    if df_flares["MCT"][i]:
+        kwargs["color"] = "orange"
+        kwargs["label"] = "candidate (connectivity tool)"
     
-    if download:
-        virtual_file = BytesIO()
-        plt.savefig(virtual_file, format="svg")
-        virtual_file.seek(0)
-        st.download_button("Download Plot", data=virtual_file.read(),file_name=f"{START_DATE}-{END_DATE}.svg")
+    if kwargs["label"] in shown_labels:
+        del kwargs["label"]
+    else:
+        shown_labels.add(kwargs["label"])
+    flare_ax.axvline(df_flares["_date"][i], **kwargs)
+
+
+first = True
+for i in events.index:    
+    for col, ax in zip(columns, axs):
+        kwargs = {}
+        if first:
+            first = False
+            kwargs["label"] = "electron event"
+        
+        offset = pd.Timedelta(0)
+        if sensor == "STEP":
+            step_value = step_offsets[int(col.split("_")[-1])] * config.TIME_RESOLUTION
+            offset = pd.Timedelta(seconds=int(step_value))
+        ax.axvspan(events["Start"][i]+offset, events["End"][i]+offset, color = 'b', alpha = 0.2, **kwargs)
+
+shown_labels = set()
+positions = axs[0].get_ylim()
+for i in df_flares[~df_flares["EPD_EVENT"].isna()].index:
+    kwargs = {"color": "blue", "label": "temporal coincidence with electron event"}
+
+    if df_flares["MCT"][i]:
+        kwargs["color"] = "red"
+        kwargs["label"] = "connected flare-electron event"
+        event = events.loc[int(df_flares["EPD_EVENT"][i])]
+        offset = pd.Timedelta(0)
+        if sensor == "STEP":
+            step_value = step_offsets[int(columns[0].split("_")[-1])] * config.TIME_RESOLUTION
+            offset = pd.Timedelta(seconds=int(step_value))
+        event_mid = (event["End"] - event["Start"]) / 2 + event["Start"] + offset
+
+        axs[0].arrow(df_flares["_date"][i], positions[i%2], 
+                     axs[0].get_xaxis().get_converter().convert((event_mid-df_flares["_date"][i])/pd.Timedelta(seconds=60), "s", axs[0]), 
+                       0, lw=2)
+
+    for ax in axs:
+        if kwargs.get("label", None) in shown_labels:
+            del kwargs["label"]
+        elif kwargs.get("label", None):
+            shown_labels.add(kwargs["label"])
+        
+        ax.axvline(df_flares["_date"][i], **kwargs)
+
+
+flare_ax.set_xlim(*axs[0].get_xlim())
+flare_ax.xaxis.tick_top()
+flare_ax.get_yaxis().set_visible(False)
+
+flare_ax.legend()
+
+for ax in axs[:-1]:
+    ax.legend(loc = 'lower right')
+    ax.get_xaxis().set_visible(False)
+
+axs[-1].legend(loc = 'lower right')
+plt.ylabel('electron intensity [$(cm^2 \ s \ sr \ MeV)^{-1}$]', fontsize = 20, loc="bottom")
+plt.xlabel('time', fontsize = 20)
+
+st.pyplot(plt)

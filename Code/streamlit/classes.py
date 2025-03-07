@@ -6,3 +6,4 @@ class Config:
     step_sigma: float
     ept_sigma: float
     delta_flares: float
+    indirect_factor: float = 1.5
