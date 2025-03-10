@@ -47,11 +47,11 @@ last_flare = dates.max()
 
 stix_flares["_date"] = dates
 
-st.title("Magnetic Connectivity between Flares and SEP Events")
+st.header("Automated Linkage between Solar Flares and Energetic Particle Events")
 
 with st.sidebar:
-    START_DATE = st.date_input("Start", datetime.date(2021, 5, 21), first_flare, last_flare)
-    END_DATE = st.date_input("End", START_DATE+datetime.timedelta(days=3), first_flare, last_flare)
+    START_DATE = st.date_input(f"Start (after {first_flare.date()})", datetime.date(2021, 5, 21), first_flare, last_flare)
+    END_DATE = st.date_input(f"End (before {last_flare.date()})", START_DATE+datetime.timedelta(days=3), first_flare, last_flare)
 
     if START_DATE > END_DATE:
         st.warning("Startdate needs to be before enddate")
@@ -59,13 +59,11 @@ with st.sidebar:
 
     sensor_switch = datetime.date(2021, 10, 22)
 
-    download = st.toggle("Activate Downloads")
-
-    with st.expander("More Options:"):
-        DELTA = st.slider("Delta Flares", 1, 50, 10)
-        WINDOW_LEN = st.slider("Window Lengths", 6, 24, 18)
-        SIGMA_STEP = st.slider("STEP-Sigma", 2., 5., 3.5)
-        SIGMA_EPT = st.slider("EPT-Sigma", 1., 4., 2.5)
+    with st.expander("Settings for mag. connectivity and SEP event detection"):
+        DELTA = st.slider("Flare accepteance radius", 1, 50, 10, format="%d°")
+        WINDOW_LEN = st.slider("SEP run. avg. window length", 6*5, 24*5, 18*5, 5, format="%d min") // 5
+        SIGMA_STEP = st.slider("STEP sigma threshold", 2., 5., 3.5, format="%.1fσ")
+        SIGMA_EPT = st.slider("EPT sigma threshold", 1., 4., 2.5, format="%.1fσ")
 
         CONFIG = Config(window_length=WINDOW_LEN, 
                         step_sigma=SIGMA_STEP, 
@@ -194,20 +192,86 @@ for sensor in dict_df_sensor:
             
             
 table = []
-indecies = set()
+total_indecies = set()
+ept_indecies = set()
 
 for sensor in dict_df_sensor:
     df_conn = dict_df_connection[sensor]
     mask = (~df_conn["EPD_EVENT"].isna()) & df_conn["MCT"]
     table.append([sensor, len(df_conn[mask])])
-    indecies = indecies.union(df_conn[mask].index)
+    total_indecies = total_indecies.union(df_conn[mask].index)
+    if "EPT" in sensor:
+        ept_indecies = ept_indecies.union(df_conn[mask].index)
 
-table.append(["Total", len(indecies)])
-table = pd.DataFrame(table, columns=["Sensor", "Flares deemed connected"])
+table.append(["Total", len(total_indecies)])
+
+ORDER = ["EPT-SUN", "EPT-ASUN", "EPT-NORTH", "EPT-SOUTH", "EPT","STEP", "Total"]
+
+table = sorted(table, key=lambda x: ORDER.index(x[0]))
+table = pd.DataFrame(table, columns=["Sensor", f"Flares deemed connected ({CONFIG.start_date} - {CONFIG.end_date})"])
 
 
 
-st.dataframe(table)
+st.dataframe(table, hide_index=True, use_container_width=True)
+
+# --------------------------------------- FLARES ---------------------------------------
+
+with st.expander("Show Flare Details"):
+    tab_names = {}
+    for i, flare_index in enumerate(list(total_indecies)[:10]):
+        tab_names[f"{i+1}\u200B. Flare"] = flare_index
+
+    keys = list(tab_names.keys())
+
+    tabs = []
+    if keys:
+        tabs = st.tabs(keys)
+
+    for i, tab in enumerate(tabs):
+        with tab:
+            key = keys[i]
+            index = tab_names[key]
+            flare = flare_range.loc[index]
+            st.markdown(f"""#### Stix Flare ID: {flare["flare_id"]}""")
+            flare["Start UTC"] = pd.to_datetime(flare["start_UTC"]).to_pydatetime()
+            flare["Peak UTC"] = pd.to_datetime(flare["peak_UTC"]).to_pydatetime()
+            flare["End UTC"] = pd.to_datetime(flare["end_UTC"]).to_pydatetime()
+            flare["Hel. Carr. longitude [°]"] = flare["hgc_lon"]
+            flare["Hel. Carr. latitude [°]"] = flare["hgc_lat"]
+            flare["Solar Orbiter distance to Sun [AU]"] = flare["solo_position_AU_distance"]
+            flare["Distance of mag. footpoint to flare [°]"] = flare["Min Dist"]
+            st.dataframe(pd.DataFrame(
+                                [flare], 
+                                columns=[
+                                    "Start UTC", "Peak UTC", 
+                                    # "End UTC", 
+                                    "Hel. Carr. longitude [°]",
+                                    "Hel. Carr. latitude [°]",
+                                    "Solar Orbiter distance to Sun [AU]",
+                                    "Distance of mag. footpoint to flare [°]"
+                                ]
+                        ), 
+                        hide_index=True,
+                        use_container_width=True)
+            
+            connected_sensors = []
+
+            for sensor in dict_df_sensor:
+                df_conn = dict_df_connection[sensor]
+                row = df_conn.loc[index]
+                print(row[['EPD_EVENT', 'MCT']])
+                if pd.isna(row["EPD_EVENT"]) or (not row["MCT"]):
+                    connected_sensors.append([sensor, "No"])
+                    continue
+                connected_sensors.append([sensor, "Yes"])
+            st.dataframe(pd.DataFrame(connected_sensors, columns=["Sensor", "Connected Event Detected"]), hide_index=True, use_container_width=True)
+            flare_start = flare["_date_start"].round("6h")
+            file = flare_start.strftime('SOLO_PARKER_PFSS_SCTIME_ADAPT_SCIENCE_%Y%m%dT%H0000_finallegendmag.png')
+            st.image(f"{config.CACHE_DIR}/connectivity_tool_downloads/{file}", 
+                     caption="Magnetic Connectivity Tool output (http://connect-tool.irap.omp.eu/)")
+
+
+# --------------------------------------- PLOTTING ---------------------------------------
 
 sensor = st.selectbox("Render", dict_df_connection.keys())
 
@@ -235,10 +299,11 @@ df_hold[""].plot(color="black", ax=flare_ax)
 
 
 for ax, column in zip(axs, columns):
-    num = column.split("_")[-1]
+    num = int(column.split("_")[-1])
+    energies = epd.get_energies(sensor, len(df_sensor.columns))
     df_sensor[column].plot(color="black", logy=True, ax=ax, label=f"{sensor} Channel {num}")
     df_threshhold = df_std[column] * sigma + df_mean[column]
-    df_threshhold.plot(color="g", logy=True, ax=ax, label=f'Mean + {sigma} $\sigma$ (Channel {num})')
+    df_threshhold.plot(color="g", logy=True, ax=ax, label=f'mean + {sigma} $\sigma$ (Channel {num}){energies[num]}')
 
 
 # Only plot each label once, else the whole legend is filled
@@ -249,7 +314,7 @@ for i in df_flares.index:
 
     if df_flares["MCT"][i]:
         kwargs["color"] = "orange"
-        kwargs["label"] = "candidate (connectivity tool)"
+        kwargs["label"] = "candidate flare (mag. connectivity tool)"
     
     if kwargs["label"] in shown_labels:
         del kwargs["label"]
@@ -275,11 +340,11 @@ for i in events.index:
 shown_labels = set()
 positions = axs[0].get_ylim()
 for i in df_flares[~df_flares["EPD_EVENT"].isna()].index:
-    kwargs = {"color": "blue", "label": "temporal coincidence with electron event"}
+    kwargs = {"color": "blue", "label": "flare in temporal coincidence with electron \nevent (not connected by mag. connectivity tool)"}
 
     if df_flares["MCT"][i]:
         kwargs["color"] = "red"
-        kwargs["label"] = "connected flare-electron event"
+        kwargs["label"] = "connected flare"
         event = events.loc[int(df_flares["EPD_EVENT"][i])]
         offset = pd.Timedelta(0)
         if sensor == "STEP":

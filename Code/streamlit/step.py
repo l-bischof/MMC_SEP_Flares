@@ -21,9 +21,9 @@ def cleanup_sensor(df_step: pd.DataFrame):
 def shift_sensor(df_step_electron, flare_range: pd.DataFrame, length, parker_dist_series, _config: Config):
     if len(flare_range) > 0:
         first_index = flare_range.index[0]
-        delay_frame = misc.step_delay(_config.start_date, length, parker_dist=parker_dist_series[first_index])
+        delay_frame = misc.step_delay(str(_config.start_date), length, parker_dist=parker_dist_series[first_index])
     else:
-        delay_frame = misc.step_delay(_config.start_date, length)
+        delay_frame = misc.step_delay(str(_config.start_date), length)
 
     # The highest index contains the fastest electrons
     dt_min = delay_frame[-1]
