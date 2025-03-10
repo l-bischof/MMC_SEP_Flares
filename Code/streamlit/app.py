@@ -18,7 +18,6 @@ import epd
 import step
 import misc
 from classes import Config
-from io import BytesIO
 import matplotlib
 import matplotlib.pyplot as plt
 import bundler
@@ -68,7 +67,12 @@ with st.sidebar:
         SIGMA_STEP = st.slider("STEP-Sigma", 2., 5., 3.5)
         SIGMA_EPT = st.slider("EPT-Sigma", 1., 4., 2.5)
 
-        CONFIG = Config(window_length=WINDOW_LEN, step_sigma=SIGMA_STEP, ept_sigma=SIGMA_EPT, delta_flares=DELTA)
+        CONFIG = Config(window_length=WINDOW_LEN, 
+                        step_sigma=SIGMA_STEP, 
+                        ept_sigma=SIGMA_EPT, 
+                        delta_flares=DELTA, 
+                        start_date=START_DATE, 
+                        end_date=END_DATE)
 
 # --------------------------------------- STIX ---------------------------------------
 
@@ -121,8 +125,8 @@ for direction in ["sun", "asun", "north", "south"]:
 
 
 df_step = epd.load_pickles("step", str(START_DATE), str(END_DATE))
-df_step = step._cleanup_sensor(df_step)
-df_step, step_offsets = step._shift_sensor(df_step, flare_range, length=len(df_step.columns), parker_dist_series=parker_dist_series)
+df_step = step.cleanup_sensor(df_step)
+df_step, step_offsets = step.shift_sensor(df_step, flare_range, length=len(df_step.columns), parker_dist_series=parker_dist_series, _config=CONFIG)
 dict_df_sensor["STEP"] = df_step
 
 dict_df_mean:dict[str, pd.DataFrame] = {}

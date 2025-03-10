@@ -1,16 +1,11 @@
 import pandas as pd
 import numpy as np
-import datetime
-import matplotlib.pyplot as plt
-import math
 import misc
-import epd
-from classes import Config
 import config
-import streamlit as st
+from classes import Config
 
 
-def _cleanup_sensor(df_step: pd.DataFrame):
+def cleanup_sensor(df_step: pd.DataFrame):
     length = 32
     if ('Integral_Avg_Flux_47' in df_step.columns):
         length = 48
@@ -23,12 +18,12 @@ def _cleanup_sensor(df_step: pd.DataFrame):
     return df_step_electron
 
 
-def _shift_sensor(df_step_electron, flare_range: pd.DataFrame, length, parker_dist_series):
+def shift_sensor(df_step_electron, flare_range: pd.DataFrame, length, parker_dist_series, _config: Config):
     if len(flare_range) > 0:
         first_index = flare_range.index[0]
-        delay_frame = misc.step_delay(config.START_DATE, length, parker_dist=parker_dist_series[first_index])
+        delay_frame = misc.step_delay(_config.start_date, length, parker_dist=parker_dist_series[first_index])
     else:
-        delay_frame = misc.step_delay(config.START_DATE, length)
+        delay_frame = misc.step_delay(_config.start_date, length)
 
     # The highest index contains the fastest electrons
     dt_min = delay_frame[-1]
