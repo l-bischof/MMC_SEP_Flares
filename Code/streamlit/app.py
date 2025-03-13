@@ -22,7 +22,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 import bundler
 import config
-from matplotlib.dates import date2num
 
 st.set_page_config(layout="centered", page_icon=":material/flare:", page_title="MMC Flares")
 dpi = 800
@@ -47,7 +46,8 @@ last_flare = dates.max()
 
 stix_flares["_date"] = dates
 
-st.header("Automated Linkage between Solar Flares and Energetic Particle Events")
+st.title("SOLINK")
+st.subheader("Automated Linkage between Solar Flares and Energetic Particle Events")
 
 with st.sidebar:
     START_DATE = st.date_input(f"Start (after {first_flare.date()})", datetime.date(2021, 5, 21), first_flare, last_flare)
@@ -203,16 +203,22 @@ for sensor in dict_df_sensor:
     if "EPT" in sensor:
         ept_indecies = ept_indecies.union(df_conn[mask].index)
 
-table.append(["Total", len(total_indecies)])
+table.append(["Total (All Sensors)", len(total_indecies)])
+table.append(["EPT (All Directions)", len(ept_indecies)])
 
-ORDER = ["EPT-SUN", "EPT-ASUN", "EPT-NORTH", "EPT-SOUTH", "EPT","STEP", "Total"]
+ORDER = ["EPT-SUN", "EPT-ASUN", "EPT-NORTH", "EPT-SOUTH", "EPT (All Directions)","STEP", "Total (All Sensors)"]
 
 table = sorted(table, key=lambda x: ORDER.index(x[0]))
+
 table = pd.DataFrame(table, columns=["Sensor", f"Flares deemed connected ({CONFIG.start_date} - {CONFIG.end_date})"])
+# Making the total columns bold
+def bold_total(val, props=''):
+    value = props if np.isin(val, ["EPT (All Directions)", "Total (All Sensors)"]).any() else ""
+    return np.array([value]*len(val))
+s1 = table.style.apply(bold_total, props='color:black;background-color:lightgrey;', axis=1)
 
 
-
-st.dataframe(table, hide_index=True, use_container_width=True)
+st.dataframe(s1, hide_index=True, use_container_width=True)
 
 # --------------------------------------- FLARES ---------------------------------------
 
@@ -227,6 +233,7 @@ with st.expander("Show Flare Details"):
     if keys:
         tabs = st.tabs(keys)
 
+
     for i, tab in enumerate(tabs):
         with tab:
             key = keys[i]
@@ -236,8 +243,8 @@ with st.expander("Show Flare Details"):
             flare["Start UTC"] = pd.to_datetime(flare["start_UTC"]).to_pydatetime()
             flare["Peak UTC"] = pd.to_datetime(flare["peak_UTC"]).to_pydatetime()
             flare["End UTC"] = pd.to_datetime(flare["end_UTC"]).to_pydatetime()
-            flare["Hel. Carr. longitude [°]"] = flare["hgc_lon"]
-            flare["Hel. Carr. latitude [°]"] = flare["hgc_lat"]
+            long = flare["Hel. Carr. longitude [°]"] = flare["hgc_lon"]
+            lat = flare["Hel. Carr. latitude [°]"] = flare["hgc_lat"]
             flare["Solar Orbiter distance to Sun [AU]"] = flare["solo_position_AU_distance"]
             flare["Distance of mag. footpoint to flare [°]"] = flare["Min Dist"]
             st.dataframe(pd.DataFrame(
@@ -259,7 +266,6 @@ with st.expander("Show Flare Details"):
             for sensor in dict_df_sensor:
                 df_conn = dict_df_connection[sensor]
                 row = df_conn.loc[index]
-                print(row[['EPD_EVENT', 'MCT']])
                 if pd.isna(row["EPD_EVENT"]) or (not row["MCT"]):
                     connected_sensors.append([sensor, "No"])
                     continue
@@ -301,20 +307,20 @@ df_hold[""].plot(color="black", ax=flare_ax)
 for ax, column in zip(axs, columns):
     num = int(column.split("_")[-1])
     energies = epd.get_energies(sensor, len(df_sensor.columns))
-    df_sensor[column].plot(color="black", logy=True, ax=ax, label=f"{sensor} Channel {num}")
+    df_sensor[column].plot(color="black", logy=True, ax=ax, label=f"{sensor} Channel {num}\n{energies[num]}")
     df_threshhold = df_std[column] * sigma + df_mean[column]
-    df_threshhold.plot(color="g", logy=True, ax=ax, label=f'mean + {sigma} $\sigma$ (Channel {num}){energies[num]}')
+    df_threshhold.plot(color="g", logy=True, ax=ax, label=f'run. avg. mean + {sigma} $\sigma$')
 
 
 # Only plot each label once, else the whole legend is filled
 shown_labels = set()
 
 for i in df_flares.index:
-    kwargs = {"color": "black", "label": "Flare"}
+    kwargs = {"color": "black", "label": "flare"}
 
     if df_flares["MCT"][i]:
         kwargs["color"] = "orange"
-        kwargs["label"] = "candidate flare (mag. connectivity tool)"
+        kwargs["label"] = "candidate flare\n(mag. connectivity tool)"
     
     if kwargs["label"] in shown_labels:
         del kwargs["label"]
@@ -340,7 +346,7 @@ for i in events.index:
 shown_labels = set()
 positions = axs[0].get_ylim()
 for i in df_flares[~df_flares["EPD_EVENT"].isna()].index:
-    kwargs = {"color": "blue", "label": "flare in temporal coincidence with electron \nevent (not connected by mag. connectivity tool)"}
+    kwargs = {"color": "blue", "label": "coincidence flare"}
 
     if df_flares["MCT"][i]:
         kwargs["color"] = "red"
@@ -354,7 +360,7 @@ for i in df_flares[~df_flares["EPD_EVENT"].isna()].index:
 
         axs[0].arrow(df_flares["_date"][i], positions[i%2], 
                      axs[0].get_xaxis().get_converter().convert((event_mid-df_flares["_date"][i])/pd.Timedelta(seconds=60), "s", axs[0]), 
-                       0, lw=2)
+                        0, lw=8, color="#814141")
 
     for ax in axs:
         if kwargs.get("label", None) in shown_labels:
@@ -369,7 +375,10 @@ flare_ax.set_xlim(*axs[0].get_xlim())
 flare_ax.xaxis.tick_top()
 flare_ax.get_yaxis().set_visible(False)
 
-flare_ax.legend()
+handles, labels = flare_ax.get_legend_handles_labels()
+# sort both labels and handles by labels
+labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0], reverse=True))
+flare_ax.legend(handles, labels)
 
 for ax in axs[:-1]:
     ax.legend(loc = 'lower right')
