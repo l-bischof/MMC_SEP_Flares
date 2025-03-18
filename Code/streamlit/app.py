@@ -64,13 +64,15 @@ with st.sidebar:
         WINDOW_LEN = st.slider("SEP run. avg. window length", 6*5, 24*5, 18*5, 5, format="%d min") // 5
         SIGMA_STEP = st.slider("STEP sigma threshold", 2., 5., 3.5, format="%.1fσ")
         SIGMA_EPT = st.slider("EPT sigma threshold", 1., 4., 2.5, format="%.1fσ")
+        INDIRECT = st.slider("Parker Spiral extension factor", 1.1, 2., 1.5, format="%.1f")
 
         CONFIG = Config(window_length=WINDOW_LEN, 
                         step_sigma=SIGMA_STEP, 
                         ept_sigma=SIGMA_EPT, 
                         delta_flares=DELTA, 
                         start_date=START_DATE, 
-                        end_date=END_DATE)
+                        end_date=END_DATE,
+                        indirect_factor=INDIRECT)
 
 # --------------------------------------- STIX ---------------------------------------
 
@@ -124,7 +126,7 @@ for direction in ["sun", "asun", "north", "south"]:
 
 df_step = epd.load_pickles("step", str(START_DATE), str(END_DATE))
 df_step = step.cleanup_sensor(df_step)
-df_step, step_offsets = step.shift_sensor(df_step, flare_range, length=len(df_step.columns), parker_dist_series=parker_dist_series, _config=CONFIG)
+_, step_offsets = step.shift_sensor(df_step, flare_range, length=len(df_step.columns), parker_dist_series=parker_dist_series, _config=CONFIG)
 dict_df_sensor["STEP"] = df_step
 
 dict_df_mean:dict[str, pd.DataFrame] = {}
@@ -135,13 +137,18 @@ dict_df_offset:dict[str, pd.DataFrame] = {}
 
 flare_range["_date_start"] = pd.to_datetime(stix_flares['start_UTC']).dt.floor("60s")
 flare_range["_date_peak"] = pd.to_datetime(stix_flares['peak_UTC']).dt.floor("60s")
+flare_range["_date_end"] = pd.to_datetime(stix_flares['end_UTC']).dt.floor("60s")
 
 for sensor in dict_df_sensor:
+    df_sensor = dict_df_sensor[sensor]
     running_mean, running_std = epd.running_average(dict_df_sensor[sensor], CONFIG.window_length)
     dict_df_mean[sensor] = running_mean
     dict_df_std[sensor] = running_std
+    if "STEP" in sensor:
+        df_sensor, _ = step.shift_sensor(df_step, flare_range, length=len(df_step.columns), parker_dist_series=parker_dist_series, _config=CONFIG)
+        running_mean, running_std = epd.running_average(df_sensor, CONFIG.window_length)
     sigma = CONFIG.ept_sigma if "EPT" in sensor else CONFIG.step_sigma
-    events = epd.find_event(dict_df_sensor[sensor], dict_df_mean[sensor], dict_df_std[sensor], sigma)
+    events = epd.find_event(df_sensor, running_mean, running_std, sigma)
     events = pd.DataFrame(events, columns=["Start", "End"])
     dict_df_event[sensor] = events
 
@@ -354,13 +361,24 @@ for i in df_flares[~df_flares["EPD_EVENT"].isna()].index:
         event = events.loc[int(df_flares["EPD_EVENT"][i])]
         offset = pd.Timedelta(0)
         if sensor == "STEP":
-            step_value = step_offsets[int(columns[0].split("_")[-1])] * config.TIME_RESOLUTION
+            channel_index = int(columns[0].split("_")[-1])
+            step_value = step_offsets[channel_index] * config.TIME_RESOLUTION
             offset = pd.Timedelta(seconds=int(step_value))
+
+            dt_offsets = misc.step_delay(utc_start, len(df_step.columns), parker_dist_series[i])
+            # Debug
+            if False:
+                for c, ax in enumerate(axs):
+                    _channel_index = int(columns[c].split("_")[-1])
+                    _offset = pd.Timedelta(seconds=dt_offsets[_channel_index])
+                    ax.axvline(df_flares["_date_start"][i]+_offset, color="magenta")
+                    ax.axvline(df_flares["_date_end"][i]+_offset*CONFIG.indirect_factor, color="magenta")
         event_mid = (event["End"] - event["Start"]) / 2 + event["Start"] + offset
 
         axs[0].arrow(df_flares["_date"][i], positions[i%2], 
                      axs[0].get_xaxis().get_converter().convert((event_mid-df_flares["_date"][i])/pd.Timedelta(seconds=60), "s", axs[0]), 
                         0, lw=8, color="#814141")
+        
 
     for ax in axs:
         if kwargs.get("label", None) in shown_labels:
