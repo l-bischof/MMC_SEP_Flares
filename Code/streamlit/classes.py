@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 import datetime
+import pandas as pd
+from typing import Optional
 
 @dataclass
 class Config:
@@ -10,3 +12,15 @@ class Config:
     ept_sigma: float
     delta_flares: float
     indirect_factor: float = 1.5
+
+@dataclass
+class SensorData:
+    is_step: bool
+    sigma: float
+
+    df_data: Optional[pd.DataFrame] = None
+    df_mean: Optional[pd.DataFrame] = None
+    df_std: Optional[pd.DataFrame] = None
+    df_event: Optional[pd.DataFrame] = None
+    df_connection: Optional[pd.DataFrame] = None
+    df_event_table: Optional[pd.DataFrame] = None

@@ -53,6 +53,7 @@ def is_peak_persistent(peak: pd.Timestamp, df, df_mean, df_std, sigma_factor):
 
     outlier_test |= mask
     
+    # checking if both are above the threshold
     results = outlier_test.sum(axis=1) >= 5
 
     return results.sum() == 2
@@ -109,6 +110,69 @@ def find_event(df, df_mean, df_std, sigma_factor):
     
     return events
     
+
+def find_event_table(df, df_mean, df_std, sigma_factor):
+    '''
+    Finds event in pandas dataframe provided and returns a Dataframe where the index is (Start, End)
+    and the columns which were active during this event. 
+    
+    Event if incoming particle numbers are at sigma_factor times the standard deviation above the running average in 5 of the particle bins.
+
+    ''' 
+    min_bins = 5 # min number of bins required to measure a rise in particles to classify as an event
+
+    # Check if we exceed background noise
+    high = df - df_mean >= sigma_factor * df_std
+
+    # If mean is zero, we want to ignore it
+    high &= (df_mean != 0) # Bitwise and
+
+    # If we have a nan we also want to ignore it
+    nan_mask = df.isna() | df_mean.isna() | df_std.isna() # Bitwise OR
+    high &= ~nan_mask
+
+    # Check when enough bins are triggered
+    peaks = high.sum(axis=1) >= min_bins
+
+    # Checking if peak are persistent, by checking the next point with the data from the previous point
+    # Grouping events which happen in succession
+    events = []
+
+    start = None
+    last = None
+
+    for peak in high.sum(axis=1)[peaks].keys():
+        if start is None:
+            if is_peak_persistent(peak, df, df_mean, df_std, sigma_factor):
+                start = peak
+                last = peak
+            continue
+
+        if last + pd.Timedelta(minutes=5) == peak:
+            last = peak
+            continue
+
+        events.append((start, last))
+        start = None
+        last = None
+
+        if is_peak_persistent(peak, df, df_mean, df_std, sigma_factor):
+            start = peak
+            last = peak
+
+    if start and last:
+        events.append((start, last))
+
+    data = []
+    index = []
+    for start, end in events:
+        row = high[start:end].any()
+        data.append(row)
+        index.append((start, end))
+
+    result_frame = pd.DataFrame(data, index=index)
+    return result_frame
+
 
 def running_average(df: pd.DataFrame, length=18):
     '''

@@ -6,6 +6,9 @@ from classes import Config
 
 
 def cleanup_sensor(df_step: pd.DataFrame):
+    """
+    Removes unused Columns and Calculates the Electron count. Returns a new Dataframe with the Electron count.
+    """
     length = 32
     if ('Integral_Avg_Flux_47' in df_step.columns):
         length = 48
