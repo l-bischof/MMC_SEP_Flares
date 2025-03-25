@@ -61,6 +61,6 @@ def load_pickles(sensor, start_date, end_date, particle = 'electron', viewing = 
         date = misc.next_date(date)
     
     # change index back to datetime with correct minutes
-    datetime_series = pd.Series(pd.date_range(start_date, periods = 86400 / config.TIME_RESOLUTION * count, freq = str(config.TIME_RESOLUTION) + "S"))
+    datetime_series = pd.Series(pd.date_range(start_date, periods = 86400 / config.TIME_RESOLUTION * count, freq = str(config.TIME_RESOLUTION) + "s"))
     df.set_index(datetime_series, inplace = True)
     return df
