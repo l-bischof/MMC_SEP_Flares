@@ -59,7 +59,7 @@ with st.sidebar:
 
     sensor_switch = datetime.date(2021, 10, 22)
     if START_DATE <= sensor_switch and sensor_switch <= END_DATE:
-        st.warning(f"At {sensor_switch} the STEP-Data format was changed and thus can't be compared.")
+        st.warning(f"On the {sensor_switch} the data format of STEP was changed and thus can't be compared.")
         st.stop()
 
     with st.expander("Settings for mag. connectivity and SEP event detection"):
@@ -86,7 +86,7 @@ dates = pd.to_datetime(stix_flares['peak_UTC'])
 mask = (pd.Timestamp(START_DATE) <= dates) & (dates < pd.Timestamp(END_DATE) + pd.Timedelta(days=1))
 flare_range = stix_flares[mask]
 if not mask.any():
-    st.error("No Stix Flares found in the selected timeframe.")
+    st.error("No STIX Flares found in the selected timeframe.")
     st.stop()
 
 parker_dist_series = pd.read_pickle(f"{config.CACHE_DIR}/SolarMACH/parker_spiral_distance.pkl")['Parker_Spiral_Distance']
@@ -129,9 +129,6 @@ for i in flare_range.index:
 
     flare_range.loc[i, "Min Dist"] = min_dist
 
-if len(flare_range) == 0:
-    st.warning("No Flares found in the selected time frame")
-    st.stop()
 
 flare_range["MCT"] = flare_range["Min Dist"] <= DELTA
 connected_flares = flare_range[flare_range["MCT"]]
