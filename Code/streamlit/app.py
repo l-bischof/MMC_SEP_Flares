@@ -1,4 +1,3 @@
-from collections import defaultdict
 import sys
 import os
 # Making sure we have access to all the modules and are in the correct working directory
@@ -59,6 +58,9 @@ with st.sidebar:
         st.stop()
 
     sensor_switch = datetime.date(2021, 10, 22)
+    if START_DATE <= sensor_switch and sensor_switch <= END_DATE:
+        st.warning(f"At {sensor_switch} the STEP-Data format was changed and thus can't be compared.")
+        st.stop()
 
     with st.expander("Settings for mag. connectivity and SEP event detection"):
         DELTA = st.slider("Flare accepteance radius", 1, 50, 10, format="%d°")
@@ -66,6 +68,8 @@ with st.sidebar:
         SIGMA_STEP = st.slider("STEP sigma threshold", 2., 5., 3.5, format="%.1fσ")
         SIGMA_EPT = st.slider("EPT sigma threshold", 1., 4., 2.5, format="%.1fσ")
         INDIRECT = st.slider("Parker Spiral extension factor", 1.1, 2., 1.5, format="%.1f")
+        N_CHANNELS = st.slider("Number of channels needed for connection", 1, 20, 5)
+
 
         CONFIG = Config(window_length=WINDOW_LEN, 
                         step_sigma=SIGMA_STEP, 
@@ -73,14 +77,17 @@ with st.sidebar:
                         delta_flares=DELTA, 
                         start_date=START_DATE, 
                         end_date=END_DATE,
-                        indirect_factor=INDIRECT)
+                        indirect_factor=INDIRECT,
+                        needed_channels=N_CHANNELS)
 
 # --------------------------------------- STIX ---------------------------------------
-
 # Filtering the flares to the date range
 dates = pd.to_datetime(stix_flares['peak_UTC'])
 mask = (pd.Timestamp(START_DATE) <= dates) & (dates < pd.Timestamp(END_DATE) + pd.Timedelta(days=1))
 flare_range = stix_flares[mask]
+if not mask.any():
+    st.error("No Stix Flares found in the selected timeframe.")
+    st.stop()
 
 parker_dist_series = pd.read_pickle(f"{config.CACHE_DIR}/SolarMACH/parker_spiral_distance.pkl")['Parker_Spiral_Distance']
 
@@ -105,6 +112,8 @@ for i in flare_range.index:
         con_tool_data = read_data(flare_range["Rounded"][i])
     except Exception as e:
         print(flare_range["Rounded"][i], repr(e))
+        st.error(f"We are missing the connectivity tool data for {flare_range.loc[i]} and thus can't give a prediction.")
+        st.stop()
         
 
     con_longitudes = con_tool_data["CRLN"]
@@ -126,120 +135,128 @@ if len(flare_range) == 0:
 
 flare_range["MCT"] = flare_range["Min Dist"] <= DELTA
 connected_flares = flare_range[flare_range["MCT"]]
-
 # --------------------------------------- EPD ---------------------------------------
-
 dict_sensor:dict[str, SensorData] = {}
 
 for direction in ["sun", "asun", "north", "south"]:
     sensor = SensorData(is_step=False, sigma=CONFIG.ept_sigma)
     sensor.df_data = epd.load_pickles("ept", str(START_DATE), str(END_DATE), viewing=direction)
+
+    sensor.df_mean, sensor.df_std = epd.running_average(sensor.df_data, CONFIG.window_length)
+
     dict_sensor[f"EPT-{direction.upper()}"] = sensor
+
 
 
 step_sensor = SensorData(is_step=True, sigma=CONFIG.step_sigma)
 df_step = epd.load_pickles("step", str(START_DATE), str(END_DATE))
 df_step = step.cleanup_sensor(df_step)
-_, step_offsets = step.shift_sensor(df_step, flare_range, length=len(df_step.columns), parker_dist_series=parker_dist_series, _config=CONFIG)
+
 step_sensor.df_data = df_step
+step_sensor.df_mean, step_sensor.df_std = epd.running_average(step_sensor.df_data, CONFIG.window_length)
+
 dict_sensor["STEP"] = step_sensor
 
 for sensor_name in dict_sensor:
     # Getting the Sensor Object
     sensor = dict_sensor[sensor_name]
 
-    # Saving the Data to modify if needed
+    # To shorten the code
     df_sensor = sensor.df_data
-
-    # Used later for the Plotting
-    running_mean, running_std = epd.running_average(df_sensor, CONFIG.window_length)
-    dict_sensor[sensor_name].df_mean = running_mean
-    dict_sensor[sensor_name].df_std = running_std
-
-    if sensor.is_step:
-        # Overwriting the Data with shifted values, because the electrons can take tens minutes to arrive
-        df_sensor, _ = step.shift_sensor(df_step, flare_range, length=len(df_step.columns), 
-                                         parker_dist_series=parker_dist_series, _config=CONFIG)
-        running_mean, running_std = epd.running_average(df_sensor, CONFIG.window_length)
-
+    running_mean = sensor.df_mean
+    running_std = sensor.df_std
     sigma = sensor.sigma
+
+
     # Getting all events
-    event_table = epd.find_event_table(df_sensor, running_mean, running_std, sigma)
-    dict_sensor[sensor_name].df_event_table = event_table
-    events = pd.DataFrame(event_table.index.to_list(), columns=["Start", "End"])
-    dict_sensor[sensor_name].df_event = events
+    columns =  df_sensor.columns
+
+    threshold = running_mean + sigma * running_std
+    selected = df_sensor > threshold
+
+    # If mean is zero, we want to ignore it
+    selected &= (running_mean != 0) # Bitwise and
+
+    # If we have a nan we also want to ignore it
+    nan_mask = df_sensor.isna() | running_mean.isna() | running_std.isna() # Bitwise OR
+    selected &= ~nan_mask
+
+    # Implementing the idea described here for effecient detection of events: 
+    # https://joshdevlin.com/blog/calculate-streaks-in-pandas/
+
+    diff = (selected != selected.shift()) & ~selected.shift().isna()
+    indexed = diff.cumsum()
+    streaks = selected * indexed
+    streaks = streaks[streaks != 0]
+    streaks["Index"] = streaks.index
+
+    event_starts = []
+    event_ends = []
+
+
+    for i, column in enumerate(columns):
+        time_corrected = streaks["Index"]
+        group = time_corrected.groupby(streaks[column])
+
+        # Remove singular events
+        mask = group.count().reset_index(drop=True) > 1
+
+        # Getting the Event Starts
+        min_group = group.min().reset_index(drop=True)[mask]
+
+        # And Ends
+        max_group = group.max().reset_index(drop=True)[mask]
+
+
+        channel_event = pd.Series(min_group)
+        event_starts.append(channel_event)
+
+        event_ends.append(pd.Series(max_group))
+
+
+    # Fully parallize the computation of the events and only loop over the flares
+    df_starts = pd.DataFrame(event_starts, index=columns).T
+    df_ends = pd.DataFrame(event_ends, index=columns).T
+
+    df_conn = flare_range.copy()
 
     if sensor.is_step:
-        step_connections = flare_range.copy()
-        step_connections["EPD_EVENT"] = np.nan
-        for i in flare_range.index:
-            utc_start = flare_range['_date_start'][i]
-            utc_end = flare_range['_date_end'][i]
-
-            
-            dt = misc.step_delay(utc_start, len(df_step.columns), parker_dist_series[i])
-
-            counter = defaultdict(int)
-            delay = []
-            for j in range(len(df_step.columns)):
-                delay_start = utc_start + datetime.timedelta(0, math.floor(dt[j]))
-                delay_peak_indirect = utc_end + datetime.timedelta(0, math.floor(dt[j] * CONFIG.indirect_factor))
-                
-                mask = (delay_start < events["Start"]+pd.Timedelta(seconds=step_offsets[j]*config.TIME_RESOLUTION)) & (events["Start"]+pd.Timedelta(seconds=step_offsets[j]*config.TIME_RESOLUTION) < delay_peak_indirect)
-                count = 0
-                for event_index, event in events[mask].iterrows():
-                    # Looking up the connected channels in the table
-                    table_index = (event["Start"], event["End"])
-
-                    # We need to use the array indexing because our tuple gets interpreted as slice
-                    table_row = event_table.loc[[table_index]]
-
-                    # Selecting the correct column
-                    table_value = table_row.iloc[:, j]
-
-                    # This will return an array with one element containing either True or False
-                    # To cast the array to a bool we use all
-                    if table_value.all():
-                        counter[event_index] += 1
-                        if counter[event_index] == 5:
-                            step_connections.loc[i, "EPD_EVENT"] = event_index
-                            break
-            
-        dict_sensor[sensor_name].df_connection = step_connections
+        speeds = misc.physics.get_step_speeds(length=len(columns))
     else:
-        ept_connection = flare_range.copy()
-        ept_connection["EPD_EVENT"] = np.nan
-
-        for i in flare_range.index:
-            utc_start = flare_range['_date_start'][i]
-            utc_peak = flare_range['_date_end'][i]
-            solo_distance = flare_range['solo_position_AU_distance'][i]
+        speeds = misc.misc_handler.compute_particle_speed(34, "electron")
+    
+    if df_starts.empty:
+        df_conn["channels"] = 0
+    else:
+        for flare_index in flare_range.index:
+            arrive_time = pd.to_timedelta(parker_dist_series[i] / speeds, unit="s")
             
-            # Timestamp of the flare start
-            flare_start = misc.add_delay('electron', i, utc_start, CONFIG.indirect_factor, solo_distance)
-            # Timestamp of the flare peak
-            flare_peak = misc.add_delay('electron', i, utc_peak, CONFIG.indirect_factor, solo_distance)
+            low = df_conn["_date_start"][flare_index] + arrive_time
+            high = df_conn["_date_end"][flare_index] + arrive_time * CONFIG.indirect_factor
 
-            for (flare_start_direct, _), (_, flare_peak_indirect) in zip(flare_start, flare_peak):
-                mask = (flare_start_direct < events["Start"]) & (events["Start"] < flare_peak_indirect)
-                for event in events[mask].index:
-                    ept_connection.loc[i, "EPD_EVENT"] = event
-                    break
+            mask = low < df_starts
+            mask &= df_starts < high
 
+            df_conn.loc[flare_index, "channels"] = mask.any().sum()
+    
+    events = pd.concat({"Start": df_starts, "End": df_ends}, axis=1)
+    events = events.swaplevel(axis=1)
+    df_conn["EPD_EVENT"] = df_conn["channels"] >= CONFIG.needed_channels
 
-        dict_sensor[sensor_name].df_connection = ept_connection
-            
+    dict_sensor[sensor_name].df_event = events
+    dict_sensor[sensor_name].df_connection = df_conn
+    
+
             
             
 table = []
 total_indecies = set()
 ept_indecies = set()
-
 # Collecting the events in sets to display which sensor captured which events
 
 for sensor_name in dict_sensor:
     df_conn = dict_sensor[sensor_name].df_connection
-    mask = (~df_conn["EPD_EVENT"].isna()) & df_conn["MCT"]
+    mask = df_conn["EPD_EVENT"] & df_conn["MCT"]
     table.append([sensor_name, len(df_conn[mask])])
     total_indecies = total_indecies.union(df_conn[mask].index)
     if not dict_sensor[sensor_name].is_step:
@@ -263,6 +280,8 @@ s1 = table.style.apply(bold_total, props='color:black;background-color:lightgrey
 st.dataframe(s1, hide_index=True, use_container_width=True)
 
 # --------------------------------------- FLARES ---------------------------------------
+
+highlighted = -1
 
 with st.expander("Show Flare Details"):
     tab_names = {}
@@ -308,11 +327,17 @@ with st.expander("Show Flare Details"):
             for sensor in dict_sensor:
                 df_conn = dict_sensor[sensor].df_connection
                 row = df_conn.loc[index]
-                if pd.isna(row["EPD_EVENT"]) or (not row["MCT"]):
+                if (not row["EPD_EVENT"]) or (not row["MCT"]):
                     connected_sensors.append([sensor, "No"])
                     continue
                 connected_sensors.append([sensor, "Yes"])
             st.dataframe(pd.DataFrame(connected_sensors, columns=["Sensor", "Connected Event Detected"]), hide_index=True, use_container_width=True)
+
+            # Highlight Flare
+            if st.button("Highlight me in the graph!", key=index):
+                highlighted = index
+
+            # Display Connectivity Tool
             flare_start = flare["_date_start"].round("6h")
             file = flare_start.strftime('SOLO_PARKER_PFSS_SCTIME_ADAPT_SCIENCE_%Y%m%dT%H0000_finallegendmag.png')
             st.image(f"{config.CACHE_DIR}/connectivity_tool_downloads/{file}", 
@@ -320,8 +345,10 @@ with st.expander("Show Flare Details"):
 
 
 # --------------------------------------- PLOTTING ---------------------------------------
-
 sensor_name = st.selectbox("Render", dict_sensor.keys())
+
+if highlighted != -1:
+    st.info(f"The Flare with ID {flare_range.loc[highlighted]["flare_id"]} will be highlighed")
 
 sensor = dict_sensor[sensor_name]
 df_flares = sensor.df_connection
@@ -329,7 +356,6 @@ df_mean = sensor.df_mean
 df_std = sensor.df_std
 df_sensor = sensor.df_data
 events = sensor.df_event
-event_table = sensor.df_event_table
 
 sigma = sensor.sigma
 columns = []
@@ -365,61 +391,47 @@ for i in df_flares.index:
         kwargs["color"] = "orange"
         kwargs["label"] = "candidate flare\n(mag. connectivity tool)"
     
+    if i == highlighted:
+        kwargs["color"] = "magenta"
+        kwargs["label"] = "highlighted flare (candidate)"
+    
     if kwargs["label"] in shown_labels:
         del kwargs["label"]
     else:
         shown_labels.add(kwargs["label"])
     flare_ax.axvline(df_flares["_date"][i], **kwargs)
 
+if sensor.is_step:
+    speeds = misc.physics.get_step_speeds(length=len(columns))
+else:
+    speeds = misc.misc_handler.compute_particle_speed(34, "electron")
 
 first = True
-for i in events.index:    
-    for col, ax in zip(columns, axs):
+for col, ax in zip(columns, axs):
+    for event in events[col].iloc:
+        if event.isna().all():
+            continue
         kwargs = {}
         if first:
             first = False
             kwargs["label"] = "electron event"
-        
-        offset = pd.Timedelta(0)
-        if sensor.is_step:
-            step_value = step_offsets[int(col.split("_")[-1])] * config.TIME_RESOLUTION
-            offset = pd.Timedelta(seconds=int(step_value))
-        ax.axvspan(events["Start"][i]+offset, events["End"][i]+offset, color = 'b', alpha = 0.2, **kwargs)
+
+        ax.axvspan(event["Start"], event["End"], color = 'b', alpha = 0.2, **kwargs)
 
 # Plotting EPD-Connected Flares (candidates/connected)
 shown_labels = set()
 
 # Used for showing the connections, we use top and bottom to not upstruct the plot
 positions = axs[0].get_ylim()
-for i in df_flares[~df_flares["EPD_EVENT"].isna()].index:
+for i in df_flares[df_flares["EPD_EVENT"] == True].index:
     kwargs = {"color": "blue", "label": "coincidence flare"}
 
     if df_flares["MCT"][i]:
         kwargs["color"] = "red"
         kwargs["label"] = "connected flare"
-        event = events.loc[int(df_flares["EPD_EVENT"][i])]
-        offset = pd.Timedelta(0)
-        if sensor.is_step:
-            channel_index = int(columns[0].split("_")[-1])
-            step_value = step_offsets[channel_index] * config.TIME_RESOLUTION
-            offset = pd.Timedelta(seconds=int(step_value))
-
-            dt_offsets = misc.step_delay(utc_start, len(df_step.columns), parker_dist_series[i])
-            # Debug
-            if st.query_params.get("debug"):
-                for c, ax in enumerate(axs):
-                    _channel_index = int(columns[c].split("_")[-1])
-                    _offset = pd.Timedelta(seconds=dt_offsets[_channel_index])
-                    color = "magenta"
-                    if event_table.loc[[(event["Start"], event["End"])]].iloc[:, _channel_index].any():
-                        color = "green"
-                    ax.axvline(df_flares["_date_start"][i]+_offset, color=color)
-                    ax.axvline(df_flares["_date_end"][i]+_offset*CONFIG.indirect_factor, color=color)
-        event_mid = (event["End"] - event["Start"]) / 2 + event["Start"] + offset
-
-        axs[0].arrow(df_flares["_date"][i], positions[i%2], 
-                     axs[0].get_xaxis().get_converter().convert((event_mid-df_flares["_date"][i])/pd.Timedelta(seconds=60), "s", axs[0]), 
-                        0, lw=8, color="#814141")
+        if i == highlighted:
+            kwargs["color"] = "magenta"
+            kwargs["label"] = None
         
 
     for ax in axs:
@@ -438,7 +450,7 @@ flare_ax.get_yaxis().set_visible(False)
 handles, labels = flare_ax.get_legend_handles_labels()
 # sort both labels and handles by labels
 labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0], reverse=True))
-flare_ax.legend(handles, labels)
+flare_ax.legend(handles, labels, loc="lower right")
 
 for ax in axs[:-1]:
     ax.legend(loc = 'lower right')
@@ -447,5 +459,4 @@ for ax in axs[:-1]:
 axs[-1].legend(loc = 'lower right')
 plt.ylabel('electron intensity [$(cm^2 \ s \ sr \ MeV)^{-1}$]', fontsize = 20, loc="bottom")
 plt.xlabel('time', fontsize = 20)
-
 st.pyplot(plt)

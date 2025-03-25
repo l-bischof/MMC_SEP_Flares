@@ -11,6 +11,7 @@ class Config:
     step_sigma: float
     ept_sigma: float
     delta_flares: float
+    needed_channels: int
     indirect_factor: float = 1.5
 
 @dataclass
@@ -23,4 +24,3 @@ class SensorData:
     df_std: Optional[pd.DataFrame] = None
     df_event: Optional[pd.DataFrame] = None
     df_connection: Optional[pd.DataFrame] = None
-    df_event_table: Optional[pd.DataFrame] = None
