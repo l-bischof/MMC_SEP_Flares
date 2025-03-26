@@ -278,8 +278,6 @@ st.dataframe(s1, hide_index=True, use_container_width=True)
 
 # --------------------------------------- FLARES ---------------------------------------
 
-highlighted = -1
-
 with st.expander("Show Flare Details"):
     tab_names = {}
     for i, flare_index in enumerate(list(total_indecies)[:10]):
@@ -332,7 +330,7 @@ with st.expander("Show Flare Details"):
 
             # Highlight Flare
             if st.button("Highlight me in the graph!", key=index):
-                highlighted = index
+                st.session_state["Selected_Flare"] = index
 
             # Display Connectivity Tool
             flare_start = flare["_date_start"].round("6h")
@@ -341,11 +339,14 @@ with st.expander("Show Flare Details"):
                      caption="Magnetic Connectivity Tool output (http://connect-tool.irap.omp.eu/)")
 
 
+highlighted = st.session_state.get("Selected_Flare", -1)
+highlighted = highlighted if highlighted in flare_range.index else -1
+
 # --------------------------------------- PLOTTING ---------------------------------------
 sensor_name = st.selectbox("Render", dict_sensor.keys())
 
 if highlighted != -1:
-    st.info(f"The Flare with ID {flare_range.loc[highlighted]["flare_id"]} will be highlighed")
+    st.info(f"The Flare with ID {flare_range.loc[highlighted]["flare_id"]} will be highlighted")
 
 sensor = dict_sensor[sensor_name]
 df_flares = sensor.df_connection
@@ -356,9 +357,11 @@ events = sensor.df_event
 
 sigma = sensor.sigma
 columns = []
+column_indecies = []
 
 for i in range(1, len(df_sensor.columns), len(df_sensor.columns)//4):
     columns.append(df_sensor.columns[int(i)])
+    column_indecies.append(int(i))
 
 plt.rcParams["figure.figsize"] = (20, 9)
 
@@ -440,6 +443,17 @@ for i in df_flares[df_flares["EPD_EVENT"] == True].index:
         ax.axvline(df_flares["_date"][i], **kwargs)
 
 
+if highlighted != -1:
+    spiral = parker_dist_series[highlighted]
+    arrive_times = pd.to_timedelta(spiral / speeds, unit="s")
+    for col_i, ax in zip(column_indecies, axs):
+        arrive_time = arrive_times[col_i]
+                    
+        low = flare_range["_date_start"][highlighted] + arrive_time
+        high = flare_range["_date_end"][highlighted] + arrive_time * CONFIG.indirect_factor
+
+        ax.axvspan(low, high, color = 'magenta', alpha = 0.2)
+
 flare_ax.set_xlim(*axs[0].get_xlim())
 flare_ax.xaxis.tick_top()
 flare_ax.get_yaxis().set_visible(False)
@@ -454,6 +468,9 @@ for ax in axs[:-1]:
     ax.get_xaxis().set_visible(False)
 
 axs[-1].legend(loc = 'lower right')
-plt.ylabel('electron intensity [$(cm^2 \ s \ sr \ MeV)^{-1}$]', fontsize = 20, loc="bottom")
-plt.xlabel('time', fontsize = 20)
+
+# Grouping the plot to align the labels
+fig.add_subplot(111, frameon = False)
+plt.ylabel('electron intensity [$(cm^2 \ s \ sr \ MeV)^{-1}$]', fontsize = 20, loc="center")
+plt.xlabel('time', fontsize = 20, labelpad=20)
 st.pyplot(plt)

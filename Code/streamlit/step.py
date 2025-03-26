@@ -20,22 +20,3 @@ def cleanup_sensor(df_step: pd.DataFrame):
 
     return df_step_electron
 
-
-def shift_sensor(df_step_electron, flare_range: pd.DataFrame, length, parker_dist_series, _config: Config):
-    if len(flare_range) > 0:
-        first_index = flare_range.index[0]
-        delay_frame = misc.step_delay(str(_config.start_date), length, parker_dist=parker_dist_series[first_index])
-    else:
-        delay_frame = misc.step_delay(str(_config.start_date), length)
-
-    # The highest index contains the fastest electrons
-    dt_min = delay_frame[-1]
-
-    # Correcting the timedelta between the Electrons
-    offset = ((delay_frame - dt_min) // config.TIME_RESOLUTION).astype(np.int64)
-    df_offset_step = df_step_electron.copy()
-
-    for i, column in enumerate(df_offset_step.columns):
-        df_offset_step[column] = df_offset_step[column].shift(-offset[i])
-    
-    return df_offset_step, offset
