@@ -280,7 +280,10 @@ st.dataframe(s1, hide_index=True, use_container_width=True)
 
 with st.expander("Show Flare Details"):
     tab_names = {}
-    for i, flare_index in enumerate(list(total_indecies)[:10]):
+    flare_list = list(total_indecies)
+    flare_list.sort()
+    flare_list = flare_list[:10]
+    for i, flare_index in enumerate(flare_list):
         tab_names[f"{i+1}\u200B. Flare"] = flare_index
 
     keys = list(tab_names.keys())
@@ -473,4 +476,5 @@ axs[-1].legend(loc = 'lower right')
 fig.add_subplot(111, frameon = False)
 plt.ylabel('electron intensity [$(cm^2 \ s \ sr \ MeV)^{-1}$]', fontsize = 20, loc="center")
 plt.xlabel('time', fontsize = 20, labelpad=20)
+plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
 st.pyplot(plt)
