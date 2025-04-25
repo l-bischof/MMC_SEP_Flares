@@ -226,7 +226,7 @@ for sensor_name in dict_sensor:
         df_conn["channels"] = 0
     else:
         for flare_index in flare_range.index:
-            arrive_time = pd.to_timedelta(parker_dist_series[i] / speeds, unit="s")
+            arrive_time = pd.to_timedelta(parker_dist_series[flare_index] / speeds, unit="s")
             
             low = df_conn["_date_start"][flare_index] + arrive_time
             high = df_conn["_date_end"][flare_index] + arrive_time * CONFIG.indirect_factor
@@ -310,7 +310,7 @@ with st.expander("Show Flare Details"):
                                 [flare], 
                                 columns=[
                                     "Start UTC", "Peak UTC", 
-                                    # "End UTC", 
+                                    "End UTC", 
                                     "Hel. Carr. longitude [°]",
                                     "Hel. Carr. latitude [°]",
                                     "Solar Orbiter distance to Sun [AU]",
@@ -325,10 +325,11 @@ with st.expander("Show Flare Details"):
             for sensor in dict_sensor:
                 df_conn = dict_sensor[sensor].df_connection
                 row = df_conn.loc[index]
+                n_channels = int(row['channels'])
                 if (not row["EPD_EVENT"]) or (not row["MCT"]):
-                    connected_sensors.append([sensor, "No"])
+                    connected_sensors.append([sensor, f"No ({n_channels})"])
                     continue
-                connected_sensors.append([sensor, "Yes"])
+                connected_sensors.append([sensor, f"Yes ({n_channels})"])
             st.dataframe(pd.DataFrame(connected_sensors, columns=["Sensor", "Connected Event Detected"]), hide_index=True, use_container_width=True)
 
             # Highlight Flare
@@ -404,11 +405,6 @@ for i in df_flares.index:
         shown_labels.add(kwargs["label"])
     flare_ax.axvline(df_flares["_date"][i], **kwargs)
 
-if sensor.is_step:
-    speeds = misc.physics.get_step_speeds(length=len(columns))
-else:
-    speeds = misc.misc_handler.compute_particle_speed(34, "electron")
-
 first = True
 for col, ax in zip(columns, axs):
     for event in events[col].iloc:
@@ -445,6 +441,11 @@ for i in df_flares[df_flares["EPD_EVENT"] == True].index:
         
         ax.axvline(df_flares["_date"][i], **kwargs)
 
+
+if sensor.is_step:
+    speeds = misc.physics.get_step_speeds(length=len(columns))
+else:
+    speeds = misc.misc_handler.compute_particle_speed(34, "electron")
 
 if highlighted != -1:
     spiral = parker_dist_series[highlighted]
