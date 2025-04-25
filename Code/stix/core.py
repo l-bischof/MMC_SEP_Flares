@@ -6,7 +6,12 @@ def read_list():
     '''
     Reads csv flare list file and returns the contents as a database.
     '''
-    return pd.read_csv(f"{config.CACHE_DIR}/flare_list/STIX_flarelist_w_locations_20210318_20240801_version1_pythom.csv")
+    df = pd.read_csv(f"{config.CACHE_DIR}/flare_list/STIX_flarelist_w_locations_20210214_20250228_version1_python.csv")
+
+    # We are missing STEP and EPT data for any dates after 2024-12-31
+    timestamps = pd.to_datetime(df['peak_UTC'])
+    mask = timestamps < pd.Timestamp("2025-01-01")
+    return df[mask]
  
 def closest_timestamp(peak_utc):
     '''

@@ -1,5 +1,6 @@
 import pandas as pd
 
+from tqdm import tqdm
 import stix
 import misc
 import config
@@ -12,12 +13,8 @@ df = pd.DataFrame(index = range(len(stix_flares)), columns = ['Parker_Spiral_Dis
 dest = f"{config.CACHE_DIR}/SolarMACH/parker_spiral_distance.pkl"
 
 dest_temp = f"{config.CACHE_DIR}/SolarMACH/parker_spiral_distance_temp.pkl"
-start = 0 # change this variable you want to append new data without doing everything again e.g. in case of a crash in the process
 
-if start != 0:
-    df = pd.read_pickle(dest_temp)
-
-for i in stix_flares.index[start:]:
+for i in tqdm(df.index):
     if i % 100 == 0:
         df.to_pickle(dest_temp)
         
