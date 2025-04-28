@@ -33,18 +33,61 @@ def setup():
 
 @st.cache_resource
 def get_stix_flares():
-    return read_list()
+    raw_list = read_list()
+    _dates = pd.to_datetime(raw_list['peak_UTC'])
+    raw_list["_date"] = _dates
+
+    raw_list["Rounded"] = raw_list["peak_UTC"].apply(closest_timestamp)
+
+    # Making sure the flare time is suntime
+    AU_TO_M = 149597870700
+    SPEED = 299_792_458 # m/s
+    time_difference = pd.to_timedelta((raw_list["solo_position_AU_distance"] * AU_TO_M) / SPEED, unit="s")
+
+    raw_list["_date_start"] = pd.to_datetime(raw_list['start_UTC']).dt.floor("60s") - time_difference
+    raw_list["_date_peak"]  = pd.to_datetime(raw_list['peak_UTC']).dt.floor("60s")  - time_difference
+    raw_list["_date_end"]   = pd.to_datetime(raw_list['end_UTC']).dt.floor("60s")   - time_difference
+
+    # Looping over all flare candidates because connectivity Tool returns Dataframe
+    for i in raw_list.index:
+        flare_lon = raw_list['hgc_lon'][i]
+        flare_lat = raw_list['hgc_lat'][i]
+        # Returns Dataframe
+        try:
+            con_tool_data = read_data(raw_list["Rounded"][i])
+        except Exception as e:
+            print(raw_list["Rounded"][i], repr(e))
+            st.error(f"We are missing the connectivity tool data for {raw_list.loc[i]} and thus can't give a prediction.")
+            st.stop()
+            
+
+        con_longitudes = con_tool_data["CRLN"]
+        con_latitudes = con_tool_data["CRLT"]
+
+        # Making sure we get the shortest distance
+        lon_dist = np.min([(con_longitudes-flare_lon) % 360, (flare_lon-con_longitudes) % 360], axis=0)
+        lat_dist = con_latitudes - flare_lat
+
+        dist_sq = lon_dist ** 2 + lat_dist ** 2
+
+        min_dist = math.sqrt(np.min(dist_sq))
+
+        raw_list.loc[i, "Min Dist"] = min_dist
+
+    return raw_list
+
+@st.cache_resource
+def get_parker_dist_series():
+    return pd.read_pickle(f"{config.CACHE_DIR}/SolarMACH/parker_spiral_distance.pkl")['Parker_Spiral_Distance']
 
 setup()
 stix_flares = get_stix_flares()
+parker_dist_series = get_parker_dist_series()
 
 # Filtering the flares to the date range
-dates = pd.to_datetime(stix_flares['peak_UTC'])
 
-first_flare = dates.min()
-last_flare = dates.max()
-
-stix_flares["_date"] = dates
+first_flare = stix_flares["_date"].min()
+last_flare = stix_flares["_date"].max()
 
 st.title("SOLINK")
 st.subheader("Automated Linkage between Solar Flares and Energetic Particle Events")
@@ -82,56 +125,16 @@ with st.sidebar:
 
 # --------------------------------------- STIX ---------------------------------------
 # Filtering the flares to the date range
-dates = pd.to_datetime(stix_flares['peak_UTC'])
+dates = stix_flares['_date']
 mask = (pd.Timestamp(START_DATE) <= dates) & (dates < pd.Timestamp(END_DATE) + pd.Timedelta(days=1))
 flare_range = stix_flares[mask]
 if not mask.any():
     st.error("No STIX Flares found in the selected timeframe.")
     st.stop()
 
-parker_dist_series = pd.read_pickle(f"{config.CACHE_DIR}/SolarMACH/parker_spiral_distance.pkl")['Parker_Spiral_Distance']
-
-flare_range["Rounded"] = flare_range["peak_UTC"].apply(closest_timestamp)
-
-
-# Making sure the flare time is suntime
-AU_TO_M = 149597870700
-SPEED = 299_792_458 # m/s
-time_difference = pd.to_timedelta((flare_range["solo_position_AU_distance"] * AU_TO_M) / SPEED, unit="s")
-
-flare_range["_date_start"] = pd.to_datetime(stix_flares['start_UTC']).dt.floor("60s") - time_difference
-flare_range["_date_peak"] = pd.to_datetime(stix_flares['peak_UTC']).dt.floor("60s") - time_difference
-flare_range["_date_end"] = pd.to_datetime(stix_flares['end_UTC']).dt.floor("60s")- time_difference
-
-# Looping over all flare candidates because connectivity Tool returns Dataframe
-for i in flare_range.index:
-    flare_lon = flare_range['hgc_lon'][i]
-    flare_lat = flare_range['hgc_lat'][i]
-    # Returns Dataframe
-    try:
-        con_tool_data = read_data(flare_range["Rounded"][i])
-    except Exception as e:
-        print(flare_range["Rounded"][i], repr(e))
-        st.error(f"We are missing the connectivity tool data for {flare_range.loc[i]} and thus can't give a prediction.")
-        st.stop()
-        
-
-    con_longitudes = con_tool_data["CRLN"]
-    con_latitudes = con_tool_data["CRLT"]
-
-    # Making sure we get the shortest distance
-    lon_dist = np.min([(con_longitudes-flare_lon) % 360, (flare_lon-con_longitudes) % 360], axis=0)
-    lat_dist = con_latitudes - flare_lat
-
-    dist_sq = lon_dist ** 2 + lat_dist ** 2
-
-    min_dist = math.sqrt(np.min(dist_sq))
-
-    flare_range.loc[i, "Min Dist"] = min_dist
-
 
 flare_range["MCT"] = flare_range["Min Dist"] <= DELTA
-connected_flares = flare_range[flare_range["MCT"]]
+
 # --------------------------------------- EPD ---------------------------------------
 dict_sensor:dict[str, SensorData] = {}
 
