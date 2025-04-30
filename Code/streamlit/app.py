@@ -94,7 +94,7 @@ st.subheader("Automated Linkage between Solar Flares and Energetic Particle Even
 
 with st.sidebar:
     START_DATE = st.date_input(f"Start (after {first_flare.date()})", datetime.date(2021, 5, 21), first_flare, last_flare)
-    END_DATE = st.date_input(f"End (before {last_flare.date()})", START_DATE+datetime.timedelta(days=3), first_flare, last_flare)
+    END_DATE = st.date_input(f"End (before {last_flare.date()})", START_DATE+datetime.timedelta(days=3), START_DATE, START_DATE+datetime.timedelta(days=10))
 
     if START_DATE > END_DATE:
         st.warning("Startdate needs to be before enddate")
@@ -482,3 +482,6 @@ plt.ylabel('electron intensity [$(cm^2 \ s \ sr \ MeV)^{-1}$]', fontsize = 20, l
 plt.xlabel('time', fontsize = 20, labelpad=20)
 plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
 st.pyplot(plt)
+plt.close('all')
+del dict_sensor
+del fig
