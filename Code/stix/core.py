@@ -54,32 +54,6 @@ def flares_range(start_date, end_date, dates_series):
     flare_range = dates_series[mask]
     return  flare_range.index[0], flare_range.index[-1]
 
-def convert_goes_decimal(stix_flares_goes, flare_ids):
-    flare_classes = []
-    
-    for i in flare_ids:
-        goes = stix_flares_goes[i]
-        
-        if str(goes) == 'nan':
-            print('flare: ', i, ' has no GOES class assigned.')
-            continue
-    
-        if goes[0] == 'A':
-            flare_classes.append(0)
-        if goes[0] == 'B':
-            val = float(goes[1:])
-            flare_classes.append(val)
-        if goes[0] == 'C':
-            val = 9 + float(goes[1:])
-            flare_classes.append(val)
-        if goes[0] == 'M':
-            val = 19 + float(goes[1:])
-            flare_classes.append(val)
-        if goes[0] == 'X':
-            val = 29 + float(goes[1:])
-            flare_classes.append(val)
-    
-    return flare_classes
 
 def convert_goes_variable(stix_flares_goes, flare_ids):
     flare_classes = []

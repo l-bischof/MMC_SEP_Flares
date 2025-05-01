@@ -26,14 +26,6 @@ def parker_spiral_distance(timestamp):
     
     return r / (2 * theta) * (theta * math.sqrt(1 + theta**2) + math.log(theta + math.sqrt(1 + theta**2)))
 
-def mag_footpoint_lonitude(timestamp):
-    from solarmach import SolarMACH
-    utc = str(timestamp)[0:10] + ' ' + str(timestamp)[11:19]    
-    body_list = ['Solar Orbiter']
-    df = SolarMACH(utc, body_list).coord_table
-    
-    return df['Magnetic footpoint longitude (Carrington)'][0]
-
 def step_delay(date, length, parker_dist=None):
     energies_32 = [0.0090, 0.0091, 0.0094, 0.0098, 0.0102, 0.0108, 0.0114, 0.0121, 0.0129, 0.0137, 0.0146, 0.0157, 0.0168, 0.0180, 0.0193, 0.0206,
                 0.0221, 0.0237, 0.0254, 0.0274, 0.0295, 0.0317, 0.0341, 0.0366, 0.0394, 0.0425, 0.0459, 0.0498, 0.0539, 0.0583, 0.0629, 0.0680]

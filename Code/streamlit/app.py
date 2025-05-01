@@ -1,5 +1,6 @@
 import sys
 import os
+
 # Making sure we have access to all the modules and are in the correct working directory
 dirname = os.path.dirname(__file__)
 code_dir = os.path.join(dirname, '../')
@@ -23,14 +24,19 @@ import matplotlib.pyplot as plt
 import bundler
 import config
 
+# Changing Icon and Title
 st.set_page_config(layout="centered", page_icon=":material/flare:", page_title="MMC Flares")
+
+# Matplotlib settings
 dpi = 800
 matplotlib.rc("savefig", dpi = dpi)
 
+# Downloading the datasets
 @st.cache_resource
 def setup():
     bundler.auto_download()
 
+# Prepare the stix flares and checking the MCT connectivity
 @st.cache_resource
 def get_stix_flares():
     raw_list = read_list()
@@ -76,6 +82,7 @@ def get_stix_flares():
 
     return raw_list
 
+# Getting the Parker Spiral distance series
 @st.cache_resource
 def get_parker_dist_series():
     return pd.read_pickle(f"{config.CACHE_DIR}/SolarMACH/parker_spiral_distance.pkl")['Parker_Spiral_Distance']
@@ -84,15 +91,13 @@ setup()
 stix_flares = get_stix_flares()
 parker_dist_series = get_parker_dist_series()
 
-# Filtering the flares to the date range
-
-first_flare = stix_flares["_date"].min()
-last_flare = stix_flares["_date"].max()
-
 st.title("SOLINK")
 st.subheader("Automated Linkage between Solar Flares and Energetic Particle Events")
 
 with st.sidebar:
+    # Filtering the flares to the date range
+    first_flare = stix_flares["_date"].min()
+    last_flare = stix_flares["_date"].max()
     START_DATE = st.date_input(f"Start (after {first_flare.date()})", datetime.date(2021, 5, 21), first_flare, last_flare)
     END_DATE = st.date_input(f"End (before {last_flare.date()})", START_DATE+datetime.timedelta(days=3), START_DATE, START_DATE+datetime.timedelta(days=10))
 
@@ -133,7 +138,7 @@ if not mask.any():
     st.stop()
 
 
-flare_range["MCT"] = flare_range["Min Dist"] <= DELTA
+flare_range["MCT"] = flare_range["Min Dist"] <= CONFIG.delta_flares
 
 # --------------------------------------- EPD ---------------------------------------
 dict_sensor:dict[str, SensorData] = {}
@@ -265,7 +270,9 @@ for sensor_name in dict_sensor:
 table.append(["Total (All Sensors)", len(total_indecies)])
 table.append(["EPT (All Directions)", len(ept_indecies)])
 
-ORDER = ["EPT-SUN", "EPT-ASUN", "EPT-NORTH", "EPT-SOUTH", "EPT (All Directions)","STEP", "Total (All Sensors)"]
+ORDER = ["EPT-SUN", "EPT-ASUN", "EPT-NORTH", 
+         "EPT-SOUTH", "EPT (All Directions)","STEP", 
+         "Total (All Sensors)"]
 
 table = sorted(table, key=lambda x: ORDER.index(x[0]))
 

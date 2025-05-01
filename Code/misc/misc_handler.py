@@ -1,17 +1,3 @@
-'''
-Collection of miscellanious functions that are used in this project
-
-Includes following functions:
-    get_epd_bins()
-    parker_spiral_distance()
-    compute_delay()
-    sum_time()
-    add_delay()
-    next_date()
-    previous_date()
-    next_utc()
-'''
-
 import math
 import datetime
 import pandas as pd
@@ -44,46 +30,6 @@ def get_epd_bins(type):
         
     return 'Invalid particle type'
 
-    
-def add_delay(particle_type, id, timestamp, indirect_factor, solo_dist):
-    '''
-    Adds time delay of arriving particles accurately to the second to given timestamp.
-    This precision is not actually needed (minutes would be accurate enough)
-    
-    parameters:
-    bin:            int number of energy bin from epd
-    id:             int flare id
-    particle_type:  string of type of particle ['ion', 'electron']
-    utc:            string of peak_UTC of flare
-    
-    # TODO: maybe vectorize computations
-    '''
-    
-    # load file with list of Parker Spiral distances at the time of each flare
-    dist = pd.read_pickle(f"{config.CACHE_DIR}/SolarMACH/parker_spiral_distance.pkl")['Parker_Spiral_Distance'][id]
-         
-    n_bins = 0
-    if particle_type == 'ion':
-        n_bins = 64
-    if particle_type == 'electron':
-        n_bins = 34
-        
-    v = compute_particle_speed(n_bins, particle_type)
-    
-    delayed_timestamp = []
-    for i in range(n_bins):
-        dt = dist / v[i] - solo_dist * 150e9 / 299792458
-        delay_direct = timestamp + datetime.timedelta(0, math.floor(dt))
-        delay_indirect = timestamp + datetime.timedelta(0, math.floor(dt * indirect_factor))
-        
-        delayed_timestamp.append([delay_direct, delay_indirect])
-    
-    return delayed_timestamp
-
-    
-def intersection(lst1, lst2):
-    lst3 = [value for value in lst1 if value in lst2]
-    return lst3
 
 
 def bin_upper_energy_limit(bin, type):
