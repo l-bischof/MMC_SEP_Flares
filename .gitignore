@@ -8,6 +8,7 @@ Code/l2
 
 Data/
 !Code/tests/data
+!Code/EventDetection.ipynb
 
 Code/flare_list/adjust_idx.py
 EPD_Dataset/

@@ -141,7 +141,7 @@ if not mask.any():
 flare_range["MCT"] = flare_range["Min Dist"] <= CONFIG.delta_flares
 
 # --------------------------------------- EPD ---------------------------------------
-dict_sensor:dict[str, SensorData] = {}
+dict_sensor: dict[str, SensorData] = {}
 
 for direction in ["sun", "asun", "north", "south"]:
     sensor = SensorData(is_step=False, sigma=CONFIG.ept_sigma)
