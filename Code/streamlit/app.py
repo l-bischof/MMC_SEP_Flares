@@ -60,13 +60,13 @@ def get_stix_flares():
         flare_lat = raw_list['hgc_lat'][i]
         # Returns Dataframe
         try:
+            # Getting the connectivity tool data
             con_tool_data = read_data(raw_list["Rounded"][i])
         except Exception as e:
             print(raw_list["Rounded"][i], repr(e))
             st.error(f"We are missing the connectivity tool data for {raw_list.loc[i]} and thus can't give a prediction.")
             st.stop()
             
-
         con_longitudes = con_tool_data["CRLN"]
         con_latitudes = con_tool_data["CRLT"]
 

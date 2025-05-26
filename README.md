@@ -23,6 +23,23 @@ All the code is tested to run with Python 3.13.2. I also strongly recommend usin
     python -m streamlit run Code/streamlit/app.py
     ```
 
+## Structure
+
+![Image](Flare-SEP.png)
+
+- Streamlit Application
+    - Main Script
+    - Creates an interactive Dashboard and Plots the Data
+    - Downloads missing Magnetic Connectivity Tool Data
+- bundler.py
+    - Packs the generated datasets (for updating purposes)
+    - Downloads and unpacks the dataset from Hugginface
+- generate_epd_dataset.py
+    - Downloads and Samples the EPD Data
+- generate_solar_mach_dataset.py
+    - Dowloads SolarMACH Data, calculates and saves Parker Spiral distances.
+
+
 ## References:
 
 (1) J. Gieseler, N. Dresing, C. Palmroos, J. L. Freiherr von Forstner, D. J. Price, R. Vainio, A. Kouloumvakos, L. Rodríguez-García, D. Trotta, V. Génot et al., “Solar-mach: An opensource tool to analyze solar magnetic connection configurations,” Frontiers in Astronomy and Space Sciences, vol. 9, p. 1058810, 2023.
