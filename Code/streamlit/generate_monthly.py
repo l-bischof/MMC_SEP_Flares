@@ -23,7 +23,7 @@ import config
 
 
 # Matplotlib settings
-dpi = 800
+dpi = 100
 matplotlib.rc("savefig", dpi = dpi)
 
 # Downloading the datasets
@@ -89,9 +89,13 @@ first_flare = stix_flares["_date"].min()
 last_flare = stix_flares["_date"].max()
 
 
+MIN_DATE = datetime.date(2021, 2, 14)
+
 import tqdm
-for s_year, s_month, e_year, e_month in tqdm.tqdm([(x//12 + 2021, x % 12+1, (x+1)//12 + 2021, (x+1) % 12+1) for x in range(2, 4*12)]):
+for s_year, s_month, e_year, e_month in tqdm.tqdm([(x//12 + 2021, x % 12+1, (x+1)//12 + 2021, (x+1) % 12+1) for x in range(1, 4*12)]):
     START_DATE = datetime.date(s_year, s_month, 1)
+    if START_DATE < MIN_DATE:
+        START_DATE = MIN_DATE
     END_DATE = datetime.date(e_year, e_month, 1) - datetime.timedelta(days=1)
 
 
@@ -101,7 +105,7 @@ for s_year, s_month, e_year, e_month in tqdm.tqdm([(x//12 + 2021, x % 12+1, (x+1
         pass
 
 
-    DELTA = 10
+    DELTA = 20
     WINDOW_LEN = 18
     SIGMA_STEP = 3.5 
     SIGMA_EPT = 2.5
@@ -393,6 +397,6 @@ for s_year, s_month, e_year, e_month in tqdm.tqdm([(x//12 + 2021, x % 12+1, (x+1
     plt.xlabel('time', fontsize = 20, labelpad=20)
     plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
 
-    plt.savefig(f"monthly/{START_DATE}.png")
+    plt.savefig(f"monthly/ept-sun/{START_DATE}.png")
 
     plt.close('all')
