@@ -111,7 +111,7 @@ with st.sidebar:
         st.stop()
 
     with st.expander("Settings for mag. connectivity and SEP event detection"):
-        DELTA = st.slider("Flare accepteance radius", 1, 50, 10, format="%d°")
+        DELTA = st.slider("Flare accepteance radius", 1, 50, 20, format="%d°")
         WINDOW_LEN = st.slider("SEP run. avg. window length", 6*5, 24*5, 18*5, 5, format="%d min") // 5
         SIGMA_STEP = st.slider("STEP sigma threshold", 2., 5., 3.5, format="%.1fσ")
         SIGMA_EPT = st.slider("EPT sigma threshold", 1., 4., 2.5, format="%.1fσ")
