@@ -15,7 +15,7 @@ st.subheader(sensor)
 # Loading all images from the directory
 # And splitting the images into lists by year
 years = {}
-for image_path in glob.glob(f"monthly/{sensor}/*.png"):
+for image_path in glob.glob(f"monthly/{sensor.lower()}/*.png"):
     # Normalizing the path to ensure it works on all systems
     image_path = image_path.replace("\\", "/")
     year = image_path.split("/")[-1].split("-")[0]
