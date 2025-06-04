@@ -501,9 +501,10 @@ flare_ax.xaxis.tick_top()
 flare_ax.get_yaxis().set_visible(False)
 
 handles, labels = flare_ax.get_legend_handles_labels()
-# sort both labels and handles by labels
-labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0], reverse=True))
-flare_ax.legend(handles, labels, loc="lower right")
+if labels:
+    # sort both labels and handles by labels
+    labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0], reverse=True))
+    flare_ax.legend(handles, labels, loc="lower right")
 
 for ax in axs[:-1]:
     ax.legend(loc = 'lower right')
