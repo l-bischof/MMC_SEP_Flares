@@ -28,7 +28,7 @@ import config
 st.set_page_config(layout="centered", page_icon=":material/flare:", page_title="MMC Flares")
 
 # Matplotlib settings
-dpi = 800
+dpi = 80
 matplotlib.rc("savefig", dpi = dpi)
 
 # Downloading the datasets
@@ -359,6 +359,7 @@ highlighted = highlighted if highlighted in flare_range.index else -1
 # --------------------------------------- PLOTTING ---------------------------------------
 sensor_name = st.selectbox("Render", dict_sensor.keys())
 
+
 if highlighted != -1:
     st.info(f"The Flare with ID {flare_range.loc[highlighted]["flare_id"]} will be highlighted")
 
@@ -368,6 +369,33 @@ df_mean = sensor.df_mean
 df_std = sensor.df_std
 df_sensor = sensor.df_data
 events = sensor.df_event
+
+start_date_col, start_time_col, _, end_date_col, end_time_col = st.columns(5)
+
+_max_val = df_sensor.index.max()
+_min_val = df_sensor.index.min()
+
+with start_date_col:
+    filter_start_date = st.date_input("Start", value=_min_val, max_value=_max_val, min_value=_min_val)
+
+with start_time_col:
+    filter_start_time = st.time_input("Start", value=_min_val, label_visibility="hidden")
+
+with end_date_col:
+    filter_end_date = st.date_input("End", value=_max_val, min_value=filter_start_date, max_value=_max_val)
+
+with end_time_col:
+    filter_end_time = st.time_input("End", value=_max_val, label_visibility="hidden")
+
+filter_start = datetime.datetime.combine(filter_start_date, filter_start_time)
+filter_end = datetime.datetime.combine(filter_end_date, filter_end_time)
+
+mask = (df_flares["_date_peak"] > filter_start) & (df_flares["_date_peak"] < filter_end ) 
+df_flares = df_flares[mask]
+df_mean = df_mean[filter_start: filter_end]
+df_std = df_std[filter_start: filter_end]
+df_sensor = df_sensor[filter_start: filter_end]
+
 
 sigma = sensor.sigma
 columns = []
