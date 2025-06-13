@@ -23,6 +23,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import bundler
 import config
+import re
 
 # Changing Icon and Title
 st.set_page_config(layout="centered", page_icon=":material/flare:", page_title="MMC Flares")
@@ -242,7 +243,13 @@ for sensor_name in dict_sensor:
             mask = low < df_starts
             mask &= df_starts < high
 
-            df_conn.loc[flare_index, "channels"] = mask.any().sum()
+            selection = mask.any()
+            df_conn.loc[flare_index, "channels"] = selection.sum()
+
+            df_conn.loc[flare_index, "First Connected Channel"] = selection[selection].index.to_list()[0] if selection.any() else None
+            df_conn.loc[flare_index, "Last Connected Channel"] = selection[selection].index.to_list()[-1] if selection.any() else None
+            
+
     
     events = pd.concat({"Start": df_starts, "End": df_ends}, axis=1)
     events = events.swaplevel(axis=1)
@@ -337,9 +344,14 @@ with st.expander("Show Flare Details"):
                 row = df_conn.loc[index]
                 n_channels = int(row['channels'])
                 if (not row["EPD_EVENT"]) or (not row["MCT"]):
-                    connected_sensors.append([sensor, f"No ({n_channels})"])
+                    connected_sensors.append([sensor, f"No ({n_channels} Connected Channels)"])
                     continue
-                connected_sensors.append([sensor, f"Yes ({n_channels})"])
+                first_channel = row["First Connected Channel"]
+                last_channel = row["Last Connected Channel"]
+                # Removing the _avg middle part
+                first_channel = re.sub(r'_Avg', '', first_channel)
+                last_channel = re.sub(r'_Avg', '', last_channel)
+                connected_sensors.append([sensor, f"Yes ({n_channels} Connected Channels from {first_channel} to {last_channel})"])
             st.dataframe(pd.DataFrame(connected_sensors, columns=["Sensor", "Connected Event Detected"]), hide_index=True, use_container_width=True)
 
             # Highlight Flare
@@ -357,35 +369,60 @@ highlighted = st.session_state.get("Selected_Flare", -1)
 highlighted = highlighted if highlighted in flare_range.index else -1
 
 # --------------------------------------- PLOTTING ---------------------------------------
-sensor_name = st.selectbox("Render", dict_sensor.keys())
 
+st.divider()
 
 if highlighted != -1:
     st.info(f"The Flare with ID {flare_range.loc[highlighted]["flare_id"]} will be highlighted")
 
-sensor = dict_sensor[sensor_name]
-df_flares = sensor.df_connection
-df_mean = sensor.df_mean
-df_std = sensor.df_std
-df_sensor = sensor.df_data
-events = sensor.df_event
+with st.expander("Plotting Options"):
+    sensor_name = st.selectbox("Render", dict_sensor.keys())
 
-start_date_col, start_time_col, _, end_date_col, end_time_col = st.columns(5)
 
-_max_val = df_sensor.index.max()
-_min_val = df_sensor.index.min()
 
-with start_date_col:
-    filter_start_date = st.date_input("Start", value=_min_val, max_value=_max_val, min_value=_min_val)
+    sensor = dict_sensor[sensor_name]
+    df_flares = sensor.df_connection
+    df_mean = sensor.df_mean
+    df_std = sensor.df_std
+    df_sensor = sensor.df_data
+    events = sensor.df_event
 
-with start_time_col:
-    filter_start_time = st.time_input("Start", value=_min_val, label_visibility="hidden")
+    start_date_col, start_time_col, _, end_date_col, end_time_col = st.columns(5)
 
-with end_date_col:
-    filter_end_date = st.date_input("End", value=_max_val, min_value=filter_start_date, max_value=_max_val)
+    _max_val = df_sensor.index.max()
+    _min_val = df_sensor.index.min()
 
-with end_time_col:
-    filter_end_time = st.time_input("End", value=_max_val, label_visibility="hidden")
+    with start_date_col:
+        filter_start_date = st.date_input("Start", value=_min_val, max_value=_max_val, min_value=_min_val)
+
+    with start_time_col:
+        filter_start_time = st.time_input("Start", value=_min_val, label_visibility="hidden")
+
+    with end_date_col:
+        filter_end_date = st.date_input("End", value=_max_val, min_value=filter_start_date, max_value=_max_val)
+
+    with end_time_col:
+        filter_end_time = st.time_input("End", value=_max_val, label_visibility="hidden")
+    
+    columns = []
+    column_indecies = []
+
+    for i in range(1, len(df_sensor.columns), len(df_sensor.columns)//3):
+        columns.append(df_sensor.columns[int(i)])
+        column_indecies.append(int(i))
+    
+    # Add last channel if length is not 4
+    if len(columns) != 4:
+        columns.append(df_sensor.columns[-1])
+        column_indecies.append(len(df_sensor.columns) - 1)
+    
+    
+    columns = st.multiselect("Select Channels", df_sensor.columns, default=columns, max_selections=4)
+    column_indecies = [df_sensor.columns.get_loc(col) for col in columns]
+    if len(columns) != 4:
+        st.warning("You need to select 4 channels to plot the data, otherwise the plot will not be rendered correctly.")
+        st.stop()
+
 
 filter_start = datetime.datetime.combine(filter_start_date, filter_start_time)
 filter_end = datetime.datetime.combine(filter_end_date, filter_end_time)
@@ -398,12 +435,7 @@ df_sensor = df_sensor[filter_start: filter_end]
 
 
 sigma = sensor.sigma
-columns = []
-column_indecies = []
 
-for i in range(1, len(df_sensor.columns), len(df_sensor.columns)//4):
-    columns.append(df_sensor.columns[int(i)])
-    column_indecies.append(int(i))
 
 plt.rcParams["figure.figsize"] = (20, 9)
 
