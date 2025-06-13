@@ -20,7 +20,7 @@ def reduce_data(_df: pd.DataFrame, sensor=""):
     date = df.index[0].round("d")
     grouped = df.resample(f"{config.TIME_RESOLUTION}s", origin=date)
     df_new = pd.DataFrame()
-    df_new = grouped.sum()
+    df_new = grouped.mean()
 
     # Data-Quality Columns
     column_intersection = DATA_QUALITY_COLUMNS.intersection(df_new.columns)
