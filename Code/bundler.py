@@ -44,7 +44,7 @@ def unpack_monthly():
 def download_monthly():
     if not os.path.isfile(f"{config.CACHE_DIR}/monthly.tar.xz"):
         urllib.request.urlretrieve("https://huggingface.co/datasets/lb32/MMC_Data/resolve/main/monthly.tar.xz", 
-                                f"{config.CACHE_DIR}/EPD_DATA.tar.xz")
+                                f"{config.CACHE_DIR}/monthly.tar.xz")
 
 
 def auto_download():
