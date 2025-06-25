@@ -280,7 +280,7 @@ for s_year, s_month, e_year, e_month in tqdm.tqdm([(x//12 + 2021, x % 12+1, (x+1
 
 
     # --------------------------------------- PLOTTING ---------------------------------------
-    sensor_name = "EPT-SUN"
+    sensor_name = "EPT-SOUTH"
 
 
     sensor = dict_sensor[sensor_name]
@@ -397,6 +397,6 @@ for s_year, s_month, e_year, e_month in tqdm.tqdm([(x//12 + 2021, x % 12+1, (x+1
     plt.xlabel('time', fontsize = 20, labelpad=20)
     plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
 
-    plt.savefig(f"monthly/ept-sun/{START_DATE}.png")
+    plt.savefig(f"monthly/{sensor_name.lower()}/{START_DATE}.png")
 
     plt.close('all')

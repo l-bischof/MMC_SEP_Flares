@@ -20,7 +20,7 @@ Deletes automatically downloaded files with original data after data reduction i
 '''
 
 dir_dest = f'{config.CACHE_DIR}/EPD_Dataset/'
-sensor = 'step'
+sensor = 'ept'
 
 # Downloads complete for 2021-01-01 to 2024-05-31
 date = config.START_DATE

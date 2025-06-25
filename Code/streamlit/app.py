@@ -351,12 +351,18 @@ with st.expander("Show Flare Details"):
                 # Removing the _avg middle part
                 first_channel = re.sub(r'_Avg', '', first_channel)
                 last_channel = re.sub(r'_Avg', '', last_channel)
-                connected_sensors.append([sensor, f"Yes ({n_channels} Connected Channels from {first_channel} to {last_channel})"])
+                first_channel = first_channel.split("_")[-1]
+                last_channel = last_channel.split("_")[-1]
+                connected_sensors.append([sensor, f"Yes ({n_channels} Connected Channels | ch_min={first_channel}, ch_max={last_channel})"])
             st.dataframe(pd.DataFrame(connected_sensors, columns=["Sensor", "Connected Event Detected"]), hide_index=True, use_container_width=True)
 
             # Highlight Flare
             if st.button("Highlight me in the graph!", key=index):
-                st.session_state["Selected_Flare"] = index
+                if st.session_state.get("Selected_Flare", -1) == index:
+                    st.session_state["Selected_Flare"] = -1
+                    st.success("Flare unselected")
+                else:
+                    st.session_state["Selected_Flare"] = index
 
             # Display Connectivity Tool
             flare_start = flare["_date_start"].round("6h")
@@ -418,6 +424,7 @@ with st.expander("Plotting Options"):
     
     
     columns = st.multiselect("Select Channels", df_sensor.columns, default=columns, max_selections=4)
+    columns = sorted(columns)
     column_indecies = [df_sensor.columns.get_loc(col) for col in columns]
     if len(columns) != 4:
         st.warning("You need to select 4 channels to plot the data, otherwise the plot will not be rendered correctly.")
