@@ -32,14 +32,32 @@ def download_connectivity_tool():
         urllib.request.urlretrieve("https://huggingface.co/datasets/lb32/MMC_Data/resolve/main/CON_DATA.tar.xz", 
                                 f"{config.CACHE_DIR}/CON_DATA.tar.xz")
 
+def pack_monthly():
+    shutil.make_archive(f"{config.CACHE_DIR}/monthly", "xztar", f"{config.CACHE_DIR}/monthly/")
+
+def unpack_monthly():
+    if os.path.isdir(f"{config.CACHE_DIR}/monthly/"):
+        print("Folder already exists! Not unpacking")
+        return
+    shutil.unpack_archive(f"{config.CACHE_DIR}/monthly.tar.xz", f"{config.CACHE_DIR}/monthly/")
+
+def download_monthly():
+    if not os.path.isfile(f"{config.CACHE_DIR}/monthly.tar.xz"):
+        urllib.request.urlretrieve("https://huggingface.co/datasets/lb32/MMC_Data/resolve/main/monthly.tar.xz", 
+                                f"{config.CACHE_DIR}/EPD_DATA.tar.xz")
+
+
 def auto_download():
     print("Starting Download...")
     download_epd()
     print("Finished EPD-Download")
     download_connectivity_tool()
     print("Finished CON-Download")
+    download_monthly()
+    print("Finished Monthly-Download")
     unpack_epd()
     unpack_connectivity_tool()
+    unpack_monthly()
     print("Finished Setup")
 
 
@@ -49,3 +67,4 @@ def auto_download():
 if __name__ == "__main__":
     pack_epd()
     pack_connectivity_tool()
+    pack_monthly()

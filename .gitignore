@@ -2,6 +2,7 @@ Cache/connectivity_tool_downloads/
 Cache/_solo
 Cache/RPW
 Cache/monthly
+Cache/*.tar.xz
 
 Code/*.txt
 Code/*.ipynb
