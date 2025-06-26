@@ -424,7 +424,7 @@ with st.expander("Plotting Options"):
     
     
     columns = st.multiselect("Select Channels", df_sensor.columns, default=columns, max_selections=4)
-    columns = sorted(columns)
+    columns = sorted(columns, key=lambda x: int(x.split("_")[-1]))
     column_indecies = [df_sensor.columns.get_loc(col) for col in columns]
     if len(columns) != 4:
         st.warning("You need to select 4 channels to plot the data, otherwise the plot will not be rendered correctly.")
