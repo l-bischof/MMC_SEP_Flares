@@ -4,6 +4,8 @@ Cache/RPW
 Cache/monthly
 Cache/*.tar.xz
 
+conf/Caddyfile
+
 Code/*.txt
 Code/*.ipynb
 Code/l2
