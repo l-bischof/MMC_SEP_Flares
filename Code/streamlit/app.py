@@ -92,7 +92,7 @@ setup()
 stix_flares = get_stix_flares()
 parker_dist_series = get_parker_dist_series()
 
-st.title("SOLINK")
+st.title("FlareSEPT")
 st.subheader("Automated Linkage between Solar Flares and Energetic Particle Events")
 
 with st.sidebar:
