@@ -14,7 +14,7 @@ def unpack_epd():
 
 def download_epd():
     if not os.path.isfile(f"{config.CACHE_DIR}/EPD_DATA.tar.xz"):
-        urllib.request.urlretrieve("https://huggingface.co/datasets/lb32/MMC_Data/resolve/main/EPD_DATA.tar.xz", 
+        urllib.request.urlretrieve("https://projects.pmodwrc.ch/flaretool/EPD_DATA.tar.xz", 
                                 f"{config.CACHE_DIR}/EPD_DATA.tar.xz")
 
 def pack_connectivity_tool():
@@ -29,7 +29,7 @@ def unpack_connectivity_tool():
 
 def download_connectivity_tool():
     if not os.path.isfile(f"{config.CACHE_DIR}/CON_DATA.tar.xz"):
-        urllib.request.urlretrieve("https://huggingface.co/datasets/lb32/MMC_Data/resolve/main/CON_DATA.tar.xz", 
+        urllib.request.urlretrieve("https://projects.pmodwrc.ch/flaretool/CON_DATA.tar.xz", 
                                 f"{config.CACHE_DIR}/CON_DATA.tar.xz")
 
 def pack_monthly():
@@ -43,7 +43,7 @@ def unpack_monthly():
 
 def download_monthly():
     if not os.path.isfile(f"{config.CACHE_DIR}/monthly.tar.xz"):
-        urllib.request.urlretrieve("https://huggingface.co/datasets/lb32/MMC_Data/resolve/main/monthly.tar.xz", 
+        urllib.request.urlretrieve("https://projects.pmodwrc.ch/flaretool/monthly.tar.xz", 
                                 f"{config.CACHE_DIR}/monthly.tar.xz")
 
 

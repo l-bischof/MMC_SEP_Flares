@@ -16,6 +16,7 @@ RUN pip3 install -r requirements.txt
 COPY ./Code ./Code
 COPY ./Cache/flare_list ./Cache/flare_list
 COPY ./Cache/SolarMACH ./Cache/SolarMACH
+COPY ./Cache/images ./Cache/images
 
 EXPOSE 8501
 
